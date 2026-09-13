@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">LifePulse</string>
+
+    <!-- Navigation / bottom bar -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_habits">Habits</string>
+    <string name="nav_expenses">Expenses</string>
+
+    <!-- Dashboard screen -->
+    <string name="dashboard_title">LifePulse</string>
+    <string name="dashboard_add_expense">Add expense</string>
+    <string name="dashboard_all_habits">All habits</string>
+    <string name="dashboard_section_todays_habits">Today\'s habits</string>
+    <string name="dashboard_section_recent_expenses">Recent expenses</string>
+    <string name="action_see_all">See all</string>
+    <string name="dashboard_habit_progress_title">Today\'s Habit Progress</string>
+    <string name="dashboard_spent_title">Today\'s Total Spent</string>
+    <string name="dashboard_spent_this_month">%1$s this month</string>
+    <string name="dashboard_streak_format">🔥 %1$d day streak</string>
+    <string name="dashboard_empty_habits_title">No habits yet</string>
+    <string name="dashboard_empty_habits_subtitle">Add your first habit to start a streak.</string>
+    <string name="dashboard_empty_expenses_title">Nothing logged</string>
+    <string name="dashboard_empty_expenses_subtitle">Your recent transactions will appear here.</string>
+    <string name="currency_format">$%.2f</string>
+
+    <!-- Habit screen -->
+    <string name="habit_title">Habits</string>
+    <string name="habit_progress_format">%1$d/%2$d</string>
+    <string name="habit_add_content_description">Add habit</string>
+    <string name="habit_delete_content_description">Delete habit</string>
+    <string name="habit_empty_title">No habits yet</string>
+    <string name="habit_empty_subtitle">Tap + to create your first daily habit.</string>
+    <string name="habit_streak_format">%1$s • 🔥 %2$d day streak</string>
+    <string name="habit_dialog_title">New habit</string>
+    <string name="habit_dialog_field_title">Habit title</string>
+    <string name="habit_dialog_frequency_label">Frequency</string>
+    <string name="action_add">Add</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="frequency_daily">Daily</string>
+    <string name="frequency_weekly">Weekly</string>
+    <string name="frequency_monthly">Monthly</string>
+
+    <!-- Expense screen -->
+    <string name="expense_title">Expenses</string>
+    <string name="expense_add_content_description">Add expense</string>
+    <string name="expense_pick_month_content_description">Pick month</string>
+    <string name="expense_delete_content_description">Delete expense</string>
+    <string name="expense_today_label">Today</string>
+    <string name="expense_this_month_label">This month</string>
+    <string name="expense_recent_transactions">Recent transactions</string>
+    <string name="expense_empty_title">No transactions</string>
+    <string name="expense_empty_subtitle">Tap + to log your first expense.</string>
+    <string name="expense_note_and_date_format">%1$s • %2$s</string>
+
+    <!-- Add expense sheet -->
+    <string name="add_expense_sheet_title">Add expense</string>
+    <string name="add_expense_amount_label">Amount</string>
+    <string name="add_expense_amount_prefix">$</string>
+    <string name="add_expense_note_label">Note (optional)</string>
+    <string name="add_expense_date_label">Date</string>
+    <string name="add_expense_date_confirm">OK</string>
+    <string name="add_expense_date_cancel">Cancel</string>
+    <string name="add_expense_save">Save expense</string>
+    <string name="add_expense_category_label">Category</string>
+
+    <!-- Category management -->
+    <string name="category_new">New Category</string>
+    <string name="category_manage_title">Categories</string>
+    <string name="category_name_hint">Category name</string>
+    <string name="category_add">Add category</string>
+    <string name="category_delete">Delete category</string>
+
+    <!-- Habit reminder notification -->
+    <string name="reminder_notification_title">LifePulse reminder</string>
+    <string name="reminder_notification_message">You\'ve completed %1$d/%2$d habits today. Keep the streak alive!</string>
+    <string name="reminder_habit_notification_message">Don\'t forget: %1$s</string>
+    <string name="reminder_channel_name">Habit reminders</string>
+    <string name="reminder_channel_description">Daily nudge to log your habits</string>
+
+    <!-- Habit reminder configuration -->
+    <string name="habit_reminder_label">Reminder</string>
+    <string name="habit_reminder_none">No reminder</string>
+    <string name="habit_reminder_time_label">Time</string>
+    <string name="habit_reminder_day_of_week_label">Day of week</string>
+    <string name="habit_reminder_day_of_month_label">Day of month</string>
+    <string name="habit_reminder_set_time">Set time</string>
+    <string name="habit_reminder_enable">Remind me</string>
+    <string name="habit_time_picker_title">Set reminder time</string>
+    <string name="action_ok">OK</string>
+    <string name="this_month">%1$s this month</string>
+    <string name="today_s_total_spent">Today\'s Total Spent</string>
+    <string name="today_s_habit_progress">Today\'s Habit Progress</string>
+</resources>
