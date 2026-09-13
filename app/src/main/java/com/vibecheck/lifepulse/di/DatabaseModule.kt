@@ -52,6 +52,17 @@ object DatabaseModule {
         }
     }
 
+    /**
+     * Adds an `isDeleted` flag to categories. Deleting a category now soft-deletes it (hidden
+     * from pickers/lists) instead of hard-deleting the row, which previously cascade-deleted
+     * every expense that referenced it.
+     */
+    private val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE categories ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): LifePulseDatabase =
@@ -69,7 +80,7 @@ object DatabaseModule {
                     }
                 }
             })
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .build()
 

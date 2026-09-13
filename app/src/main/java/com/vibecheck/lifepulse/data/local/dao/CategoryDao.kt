@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CategoryDao {
 
-    @Query("SELECT * FROM categories ORDER BY name ASC")
+    @Query("SELECT * FROM categories WHERE isDeleted = 0 ORDER BY name ASC")
     fun observeCategories(): Flow<List<CategoryEntity>>
 
     @Query("SELECT * FROM categories WHERE id = :id")
@@ -28,7 +28,11 @@ interface CategoryDao {
     @Query("UPDATE categories SET isDefault = 1 WHERE name = :name COLLATE NOCASE")
     suspend fun markAsDefault(name: String)
 
-    @Query("DELETE FROM categories WHERE id = :id")
+    /**
+     * Soft-deletes a category so it disappears from pickers/lists while any expenses that
+     * reference it keep showing its name/color (no cascade delete of expense history).
+     */
+    @Query("UPDATE categories SET isDeleted = 1 WHERE id = :id")
     suspend fun deleteCategory(id: Long)
 }
 

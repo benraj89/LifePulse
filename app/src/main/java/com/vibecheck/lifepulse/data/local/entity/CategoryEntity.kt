@@ -14,6 +14,12 @@ data class CategoryEntity(
     val name: String,
     val colorHex: String,
     /** True for the built-in categories seeded on first launch; these cannot be deleted. */
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    /**
+     * Soft-delete flag. When a user "deletes" a category we no longer remove the row so that
+     * past expenses referencing it keep their name/color instead of being cascade-deleted.
+     * Deleted categories are hidden from the category picker/list.
+     */
+    val isDeleted: Boolean = false
 )
 

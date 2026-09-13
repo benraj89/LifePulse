@@ -17,7 +17,7 @@ import com.vibecheck.lifepulse.data.local.entity.HabitLogEntity
         CategoryEntity::class,
         ExpenseEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class LifePulseDatabase : RoomDatabase() {
