@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.vibecheck.lifepulse.domain.model.Habit
 import com.vibecheck.lifepulse.domain.model.HabitFrequency
 import com.vibecheck.lifepulse.domain.repository.HabitRepository
+import com.vibecheck.lifepulse.notification.ReminderNotifier
 import com.vibecheck.lifepulse.worker.ReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,7 +28,8 @@ data class HabitUiState(
 @HiltViewModel
 class HabitViewModel @Inject constructor(
     private val habitRepository: HabitRepository,
-    private val reminderScheduler: ReminderScheduler
+    private val reminderScheduler: ReminderScheduler,
+    private val reminderNotifier: ReminderNotifier
 ) : ViewModel() {
 
     private val today = LocalDate.now()
@@ -57,8 +59,14 @@ class HabitViewModel @Inject constructor(
     }
 
     fun deleteHabit(habitId: Long) = viewModelScope.launch {
-        habitRepository.deleteHabit(habitId)
+        // Cancel the alarm BEFORE deleting so a racing alarm cannot resurrect the chain,
+        // then clear the per-habit reminder bookkeeping.
         reminderScheduler.cancelHabitReminder(habitId)
+        reminderNotifier.clearState(habitId)
+        habitRepository.deleteHabit(habitId)
     }
+
+    /** False on API 31+ when the user revoked the exact-alarm permission; UI can prompt for it. */
+    fun canScheduleExactAlarms(): Boolean = reminderScheduler.canScheduleExactAlarms()
 }
 

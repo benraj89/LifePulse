@@ -4,6 +4,23 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Alarms are wiped by reboots and app updates: needed to re-arm every reminder. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Exact wall-clock reminders.
+         SCHEDULE_EXACT_ALARM (API 31/32): granted by default, user-revocable in system settings.
+         USE_EXACT_ALARM (API 33+): auto-granted, non-revocable; allowed by Play policy because
+         reminders are the app's user-facing, user-scheduled core feature.
+         maxSdkVersion on SCHEDULE_EXACT_ALARM avoids requesting both on API 33+. -->
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- Lets the notification play sound/vibrate on devices where vibration is configured. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+
     <application
         android:name=".LifePulseApp"
         android:allowBackup="true"
@@ -26,6 +43,39 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Receives the per-habit exact alarm. Internal only, hence exported="false":
+             the PendingIntent we hand to AlarmManager still works because it is an explicit
+             intent created by our own process. -->
+        <receiver
+            android:name=".notification.ReminderAlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.vibecheck.lifepulse.action.HABIT_REMINDER" />
+                <data android:scheme="lifepulse" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Re-arms all alarms after reboot / app update / time or timezone change /
+             exact-alarm permission change. Must be exported to receive system broadcasts. -->
+        <receiver
+            android:name=".notification.ReminderBootReceiver"
+            android:directBootAware="false"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Hilt provides the WorkerFactory via Configuration.Provider, so the
              default WorkManager initializer must be removed. -->
