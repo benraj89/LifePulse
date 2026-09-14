@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "678440709824",
+    "project_id": "lifepulse-9a473",
+    "storage_bucket": "lifepulse-9a473.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:678440709824:android:7e7075fb3183958f820725",
+        "android_client_info": {
+          "package_name": "com.vibecheck.lifepulse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxP9d2NmxI_FMjB6F2UukkrK2-v610uhI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:678440709824:android:43725936a08007c3820725",
+        "android_client_info": {
+          "package_name": "com.vibecheck.lifepulse.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxP9d2NmxI_FMjB6F2UukkrK2-v610uhI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+
