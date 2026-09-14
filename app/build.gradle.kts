@@ -37,6 +37,7 @@ android {
                 "proguard-rules.pro"
             )
             resValue("string", "app_name", "LifePulse")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
