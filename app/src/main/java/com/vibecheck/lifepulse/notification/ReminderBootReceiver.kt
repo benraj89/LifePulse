@@ -3,16 +3,10 @@ package com.vibecheck.lifepulse.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.PowerManager
-import android.util.Log
 import com.vibecheck.lifepulse.domain.repository.HabitRepository
 import com.vibecheck.lifepulse.worker.ReminderScheduler
 import com.vibecheck.lifepulse.worker.ReminderSyncWorker
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 
 /**
@@ -50,27 +44,9 @@ class ReminderBootReceiver : BroadcastReceiver() {
     }
 
     private fun restoreAlarms(context: Context) {
-        // Boot/time changes must re-arm promptly; WorkManager can be deferred in Doze.
-        val pendingResult = goAsync()
-        val wakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager)
-            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LifePulse:restore-reminders")
-            .apply { acquire(10_000L) }
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                withTimeout(8_000L) {
-                    habitRepository.getAllHabitsOnce().forEach {
-                        reminderScheduler.scheduleHabitReminder(it)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("ReminderBootReceiver", "Unable to restore all alarms", e)
-            } finally {
-                try {
-                    ReminderSyncWorker.enqueueOneTimeSync(context)
-                } finally {
-                    if (wakeLock.isHeld) wakeLock.release()
-                    pendingResult.finish()
-                }
+        runReminderWork(context, "ReminderBootReceiver", syncAfterwards = true) {
+            habitRepository.getAllHabitsOnce().forEach {
+                reminderScheduler.scheduleHabitReminder(it)
             }
         }
     }

@@ -1,7 +1,6 @@
 package com.vibecheck.lifepulse.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -16,9 +15,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface HabitDao {
-
-    @Query("SELECT * FROM habits ORDER BY createdAt DESC")
-    fun observeHabits(): Flow<List<HabitEntity>>
 
     @Query("SELECT * FROM habits WHERE id = :habitId LIMIT 1")
     suspend fun getHabitById(habitId: Long): HabitEntity?
@@ -46,36 +42,18 @@ interface HabitDao {
     )
     fun observeHabitsWithStatus(date: String, weekStart: String, monthStart: String): Flow<List<HabitWithTodayStatus>>
 
-    @Query("SELECT COUNT(*) FROM habits")
-    fun observeHabitCount(): Flow<Int>
-
-    @Query("SELECT COUNT(*) FROM habit_logs WHERE completedDate = :date")
-    fun observeCompletedCount(date: String): Flow<Int>
-
     /** All completion dates for a habit, newest first — used for streak calculation. */
-    @Query("SELECT completedDate FROM habit_logs WHERE habitId = :habitId ORDER BY completedDate DESC")
-    fun observeCompletionDates(habitId: Long): Flow<List<String>>
-
     @Query("SELECT completedDate FROM habit_logs WHERE habitId = :habitId ORDER BY completedDate DESC")
     suspend fun getCompletionDates(habitId: Long): List<String>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertHabit(habit: HabitEntity): Long
 
-    @Delete
-    suspend fun deleteHabit(habit: HabitEntity)
-
     @Query("DELETE FROM habits WHERE id = :habitId")
     suspend fun deleteHabitById(habitId: Long)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertLog(log: HabitLogEntity): Long
-
-    @Query("DELETE FROM habit_logs WHERE habitId = :habitId AND completedDate = :date")
-    suspend fun deleteLog(habitId: Long, date: String)
-
-    @Query("SELECT COUNT(*) FROM habit_logs WHERE habitId = :habitId AND completedDate = :date")
-    suspend fun isCompleted(habitId: Long, date: String): Int
 
     @Query("SELECT COUNT(*) FROM habit_logs WHERE habitId = :habitId AND completedDate BETWEEN :start AND :end")
     suspend fun completionsInPeriod(habitId: Long, start: String, end: String): Int

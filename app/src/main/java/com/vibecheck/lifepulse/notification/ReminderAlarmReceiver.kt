@@ -3,20 +3,11 @@ package com.vibecheck.lifepulse.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.util.Log
-import android.os.PowerManager
-import com.vibecheck.lifepulse.worker.ReminderSyncWorker
 import com.vibecheck.lifepulse.core.DateUtils
 import com.vibecheck.lifepulse.core.ReminderTimeCalculator
 import com.vibecheck.lifepulse.domain.repository.HabitRepository
 import com.vibecheck.lifepulse.worker.ReminderScheduler
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -45,33 +36,7 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
         val habitId = intent.getLongExtra(EXTRA_HABIT_ID, -1L)
         if (habitId == -1L) return
 
-        // A BroadcastReceiver's process may be killed as soon as onReceive() returns, so we hold
-        // the broadcast open while we touch the database on a background thread.
-        val pendingResult = goAsync()
-        // goAsync keeps the process alive, but does not keep the CPU awake after onReceive.
-        val wakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager)
-            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LifePulse:reminder")
-            .apply { acquire(BROADCAST_TIMEOUT_MS + 2_000L) }
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            try {
-                // Hard timeout: the system kills the receiver after ~10s anyway, and we must
-                // always reach the finally block that re-arms the alarm.
-                val handled = withTimeoutOrNull(BROADCAST_TIMEOUT_MS) {
-                    handle(habitId)
-                    true
-                }
-                if (handled == null) ReminderSyncWorker.enqueueOneTimeSync(context)
-            } catch (t: Throwable) {
-                Log.e(TAG, "Failed to handle reminder for habit $habitId", t)
-                ReminderSyncWorker.enqueueOneTimeSync(context)
-            } finally {
-                try {
-                    if (wakeLock.isHeld) wakeLock.release()
-                } finally {
-                    pendingResult.finish()
-                }
-            }
-        }
+        runReminderWork(context, "ReminderAlarmReceiver") { handle(habitId) }
     }
 
     private suspend fun handle(habitId: Long) {
@@ -101,10 +66,7 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
             )
         )
 
-        val alreadyDone = runCatching {
-            habitRepository.observeHabitsForDate(DateUtils.today()).first()
-                .firstOrNull { it.id == habitId }?.completedToday
-        }.getOrNull() ?: false
+        val alreadyDone = habitRepository.isHabitCompleted(habit, DateUtils.today())
 
         if (occurrence >= habit.createdAt) {
             notifier.deliverOccurrence(habit.id, habit.title, occurrence, alreadyDone)
@@ -112,8 +74,6 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        private const val TAG = "ReminderAlarmReceiver"
-        private const val BROADCAST_TIMEOUT_MS = 8_000L
         const val ACTION_HABIT_REMINDER = "com.vibecheck.lifepulse.action.HABIT_REMINDER"
         const val EXTRA_HABIT_ID = "habit_id"
     }

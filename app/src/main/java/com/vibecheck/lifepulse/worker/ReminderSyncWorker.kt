@@ -10,13 +10,12 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.vibecheck.lifepulse.core.DateUtils
 import com.vibecheck.lifepulse.core.ReminderTimeCalculator
 import com.vibecheck.lifepulse.domain.repository.HabitRepository
 import com.vibecheck.lifepulse.notification.ReminderNotifier
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
@@ -48,12 +47,6 @@ class ReminderSyncWorker @AssistedInject constructor(
         notifier.ensureChannel()
 
         val habits = habitRepository.getAllHabitsOnce()
-        val completedTodayIds = runCatching {
-            habitRepository.observeHabitsForDate(DateUtils.today()).first()
-                .filter { it.completedToday }
-                .map { it.id }
-                .toSet()
-        }.getOrDefault(emptySet())
 
         habits.forEach { habit ->
             val now = LocalDateTime.now()
@@ -62,6 +55,8 @@ class ReminderSyncWorker @AssistedInject constructor(
                 notifier.clearState(habit.id)
                 return@forEach
             }
+            // Restore the next alarm before doing catch-up database work.
+            reminderScheduler.scheduleHabitReminder(habit)
 
             // 1) Catch up a missed occurrence (device was off, alarm was wiped, ...).
             val previousLocal = ReminderTimeCalculator.previousTrigger(
@@ -82,19 +77,19 @@ class ReminderSyncWorker @AssistedInject constructor(
 
             if (withinGrace && notHandledYet && existedAtOccurrence) {
                 notifier.deliverOccurrence(
-                    habit.id, habit.title, previousMillis, habit.id in completedTodayIds
+                    habit.id, habit.title, previousMillis,
+                    habitRepository.isHabitCompleted(habit, now.toLocalDate())
                 )
             } else if (notHandledYet) {
                 // Too old (or pre-dating the habit) to notify, but record it so it never fires later.
                 notifier.markOccurrenceHandled(habit.id, previousMillis)
             }
 
-            // 2) Always (re)arm the next alarm. setAlarmClock replaces any existing one, so this
-            //    is idempotent and can never create duplicates.
-            reminderScheduler.scheduleHabitReminder(habit)
         }
         Result.success()
-    } catch (t: Throwable) {
+    } catch (e: CancellationException) {
+        throw e
+    } catch (t: Exception) {
         Log.e(TAG, "Reminder sync failed", t)
         Result.retry()
     }

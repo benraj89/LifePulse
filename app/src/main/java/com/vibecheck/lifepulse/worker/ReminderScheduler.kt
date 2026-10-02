@@ -17,10 +17,7 @@ import javax.inject.Singleton
 /**
  * Schedules habit reminders with [AlarmManager].
  *
- * Why AlarmManager and not WorkManager: WorkManager's `setInitialDelay` is explicitly *inexact*.
- * Under Doze / App Standby a job can be deferred by many minutes up to hours, which is
- * unacceptable for "remind me every Monday at 21:00". `setExactAndAllowWhileIdle` is the only API
- * that fires at a precise wall-clock time even in Doze.
+ * Uses AlarmManager for timed delivery; WorkManager only provides recovery.
  *
  * One alarm is kept alive per habit at a time (the next occurrence only); when it fires,
  * [ReminderAlarmReceiver] schedules the following one. A periodic [ReminderSyncWorker] plus a
@@ -54,7 +51,7 @@ class ReminderScheduler @Inject constructor(
     @android.annotation.SuppressLint("MissingPermission")
     private fun scheduleAt(habitId: Long, triggerAtMillis: Long) {
         val am = alarmManager ?: return
-        val pendingIntent = alarmPendingIntent(habitId, mutableFlagsForUpdate = true) ?: return
+        val pendingIntent = alarmPendingIntent(habitId, create = true) ?: return
 
         try {
             if (canScheduleExactAlarms()) {
@@ -86,7 +83,7 @@ class ReminderScheduler @Inject constructor(
     fun cancelHabitReminder(habitId: Long) {
         val am = alarmManager ?: return
         // NO_CREATE so we only touch an already-registered alarm; then cancel *and* release it.
-        alarmPendingIntent(habitId, mutableFlagsForUpdate = false)?.let {
+        alarmPendingIntent(habitId, create = false)?.let {
             am.cancel(it)
             it.cancel()
         }
@@ -103,7 +100,7 @@ class ReminderScheduler @Inject constructor(
             true
         }
 
-    private fun alarmPendingIntent(habitId: Long, mutableFlagsForUpdate: Boolean): PendingIntent? {
+    private fun alarmPendingIntent(habitId: Long, create: Boolean): PendingIntent? {
         val intent = Intent(context, ReminderAlarmReceiver::class.java).apply {
             action = ReminderAlarmReceiver.ACTION_HABIT_REMINDER
             // The data URI makes each habit's PendingIntent unique: filterEquals() ignores extras,
@@ -112,7 +109,7 @@ class ReminderScheduler @Inject constructor(
             putExtra(ReminderAlarmReceiver.EXTRA_HABIT_ID, habitId)
         }
         val flags = PendingIntent.FLAG_IMMUTABLE or
-            if (mutableFlagsForUpdate) PendingIntent.FLAG_UPDATE_CURRENT else PendingIntent.FLAG_NO_CREATE
+            if (create) PendingIntent.FLAG_UPDATE_CURRENT else PendingIntent.FLAG_NO_CREATE
         return PendingIntent.getBroadcast(
             context,
             requestCodeFor(habitId),

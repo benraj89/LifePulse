@@ -10,9 +10,8 @@ interface HabitRepository {
     /** Habits enriched with completion for the date's calendar period and the period streak. */
     fun observeHabitsForDate(date: LocalDate): Flow<List<Habit>>
 
-    fun observeTotalHabitCount(): Flow<Int>
-
-    fun observeCompletedCount(date: LocalDate): Flow<Int>
+    /** Lightweight completion lookup for reminders; does not calculate UI streaks. */
+    suspend fun isHabitCompleted(habit: Habit, date: LocalDate): Boolean
 
     suspend fun addHabit(
         title: String,

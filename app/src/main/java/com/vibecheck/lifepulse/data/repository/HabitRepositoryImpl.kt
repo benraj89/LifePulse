@@ -27,25 +27,18 @@ class HabitRepositoryImpl @Inject constructor(
         ).map { rows ->
             rows.map { row ->
                 val dates = habitDao.getCompletionDates(row.habit.id)
-                Habit(
-                    id = row.habit.id,
-                    title = row.habit.title,
-                    frequency = HabitFrequency.fromRaw(row.habit.frequency),
-                    createdAt = row.habit.createdAt,
+                val habit = row.habit.toDomain()
+                habit.copy(
                     completedToday = row.completedToday,
-                    currentStreak = calculateStreak(dates, date, HabitFrequency.fromRaw(row.habit.frequency)),
-                    reminderHour = row.habit.reminderHour,
-                    reminderMinute = row.habit.reminderMinute,
-                    reminderDayOfWeek = row.habit.reminderDayOfWeek,
-                    reminderDayOfMonth = row.habit.reminderDayOfMonth
+                    currentStreak = calculateStreak(dates, date, habit.frequency)
                 )
             }
         }
 
-    override fun observeTotalHabitCount(): Flow<Int> = habitDao.observeHabitCount()
-
-    override fun observeCompletedCount(date: LocalDate): Flow<Int> =
-        observeHabitsForDate(date).map { habits -> habits.count { it.completedToday } }
+    override suspend fun isHabitCompleted(habit: Habit, date: LocalDate): Boolean =
+        habitDao.completionsInPeriod(
+            habit.id, HabitPeriod.start(date, habit.frequency).toKey(), date.toKey()
+        ) > 0
 
     override suspend fun addHabit(
         title: String,
