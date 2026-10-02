@@ -47,7 +47,6 @@ class ReminderSyncWorker @AssistedInject constructor(
     override suspend fun doWork(): Result = try {
         notifier.ensureChannel()
 
-        val now = LocalDateTime.now()
         val habits = habitRepository.getAllHabitsOnce()
         val completedTodayIds = runCatching {
             habitRepository.observeHabitsForDate(DateUtils.today()).first()
@@ -57,6 +56,7 @@ class ReminderSyncWorker @AssistedInject constructor(
         }.getOrDefault(emptySet())
 
         habits.forEach { habit ->
+            val now = LocalDateTime.now()
             if (!habit.hasReminder) {
                 reminderScheduler.cancelHabitReminder(habit.id)
                 notifier.clearState(habit.id)
@@ -81,10 +81,9 @@ class ReminderSyncWorker @AssistedInject constructor(
             val existedAtOccurrence = previousMillis >= habit.createdAt
 
             if (withinGrace && notHandledYet && existedAtOccurrence) {
-                notifier.markOccurrenceHandled(habit.id, previousMillis)
-                if (habit.id !in completedTodayIds) {
-                    notifier.showHabitReminder(habit.id, habit.title)
-                }
+                notifier.deliverOccurrence(
+                    habit.id, habit.title, previousMillis, habit.id in completedTodayIds
+                )
             } else if (notHandledYet) {
                 // Too old (or pre-dating the habit) to notify, but record it so it never fires later.
                 notifier.markOccurrenceHandled(habit.id, previousMillis)
@@ -92,7 +91,7 @@ class ReminderSyncWorker @AssistedInject constructor(
 
             // 2) Always (re)arm the next alarm. setAlarmClock replaces any existing one, so this
             //    is idempotent and can never create duplicates.
-            reminderScheduler.scheduleHabitReminder(habit, now = now)
+            reminderScheduler.scheduleHabitReminder(habit)
         }
         Result.success()
     } catch (t: Throwable) {
@@ -110,7 +109,7 @@ class ReminderSyncWorker @AssistedInject constructor(
             val request = OneTimeWorkRequestBuilder<ReminderSyncWorker>().build()
             WorkManager.getInstance(context).enqueueUniqueWork(
                 ONE_TIME_WORK_NAME,
-                ExistingWorkPolicy.REPLACE,
+                ExistingWorkPolicy.KEEP,
                 request
             )
         }

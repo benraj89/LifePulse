@@ -23,6 +23,7 @@
 
     <!-- Lets the notification play sound/vibrate on devices where vibration is configured. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
 
     <application

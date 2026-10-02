@@ -24,7 +24,7 @@ import javax.inject.Singleton
  *
  * One alarm is kept alive per habit at a time (the next occurrence only); when it fires,
  * [ReminderAlarmReceiver] schedules the following one. A periodic [ReminderSyncWorker] plus a
- * boot/time-change receiver re-arm everything, so the chain is self-healing and can never be lost.
+ * boot/time-change receiver repair the chain when Android allows background execution.
  */
 @Singleton
 class ReminderScheduler @Inject constructor(

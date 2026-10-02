@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.os.PowerManager
+import com.vibecheck.lifepulse.worker.ReminderSyncWorker
 import com.vibecheck.lifepulse.core.DateUtils
 import com.vibecheck.lifepulse.core.ReminderTimeCalculator
 import com.vibecheck.lifepulse.domain.repository.HabitRepository
@@ -26,8 +28,8 @@ import javax.inject.Inject
  *  - The next alarm is scheduled from `LocalDateTime.now()`, and the calculator only ever returns
  *    a strictly future instant, so a late-firing alarm can never re-schedule itself into the past
  *    (which would cause an infinite notification loop).
- *  - Rescheduling happens in a `finally`-style path: even if reading the habit or posting fails,
- *    the chain is re-armed, so a single failure never silently kills the reminder forever.
+ *  - The next occurrence is armed before posting. If database access fails or times out,
+ *    a sync worker is queued to repair the chain.
  */
 @AndroidEntryPoint
 class ReminderAlarmReceiver : BroadcastReceiver() {
@@ -39,23 +41,35 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
     @Inject lateinit var notifier: ReminderNotifier
 
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != ACTION_HABIT_REMINDER) return
         val habitId = intent.getLongExtra(EXTRA_HABIT_ID, -1L)
         if (habitId == -1L) return
 
         // A BroadcastReceiver's process may be killed as soon as onReceive() returns, so we hold
         // the broadcast open while we touch the database on a background thread.
         val pendingResult = goAsync()
+        // goAsync keeps the process alive, but does not keep the CPU awake after onReceive.
+        val wakeLock = (context.getSystemService(Context.POWER_SERVICE) as PowerManager)
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LifePulse:reminder")
+            .apply { acquire(BROADCAST_TIMEOUT_MS + 2_000L) }
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 // Hard timeout: the system kills the receiver after ~10s anyway, and we must
                 // always reach the finally block that re-arms the alarm.
-                withTimeoutOrNull(BROADCAST_TIMEOUT_MS) {
+                val handled = withTimeoutOrNull(BROADCAST_TIMEOUT_MS) {
                     handle(habitId)
+                    true
                 }
+                if (handled == null) ReminderSyncWorker.enqueueOneTimeSync(context)
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to handle reminder for habit $habitId", t)
+                ReminderSyncWorker.enqueueOneTimeSync(context)
             } finally {
-                pendingResult.finish()
+                try {
+                    if (wakeLock.isHeld) wakeLock.release()
+                } finally {
+                    pendingResult.finish()
+                }
             }
         }
     }
@@ -86,15 +100,14 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
                 dayOfMonth = habit.reminderDayOfMonth
             )
         )
-        notifier.markOccurrenceHandled(habitId, occurrence)
 
         val alreadyDone = runCatching {
             habitRepository.observeHabitsForDate(DateUtils.today()).first()
                 .firstOrNull { it.id == habitId }?.completedToday
         }.getOrNull() ?: false
 
-        if (!alreadyDone) {
-            notifier.showHabitReminder(habit.id, habit.title)
+        if (occurrence >= habit.createdAt) {
+            notifier.deliverOccurrence(habit.id, habit.title, occurrence, alreadyDone)
         }
     }
 

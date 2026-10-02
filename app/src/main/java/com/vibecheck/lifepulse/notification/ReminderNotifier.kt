@@ -39,9 +39,21 @@ class ReminderNotifier @Inject constructor(
      */
     fun lastHandledOccurrence(habitId: Long): Long = prefs.getLong(keyFor(habitId), 0L)
 
+    @Synchronized
     fun markOccurrenceHandled(habitId: Long, occurrenceMillis: Long) {
+        if (lastHandledOccurrence(habitId) >= occurrenceMillis) return
         // commit(): this is called from receivers/workers whose process can die immediately after.
         prefs.edit().putLong(keyFor(habitId), occurrenceMillis).commit()
+    }
+
+    /** Serializes alarm and catch-up delivery in this application's single process. */
+    @Synchronized
+    fun deliverOccurrence(habitId: Long, title: String, occurrenceMillis: Long, completed: Boolean) {
+        if (lastHandledOccurrence(habitId) >= occurrenceMillis) return
+        // Record only after posting succeeds, so a denied permission can be retried on grant.
+        if (completed || showHabitReminder(habitId, title)) {
+            markOccurrenceHandled(habitId, occurrenceMillis)
+        }
     }
 
     fun clearState(habitId: Long) {
@@ -77,9 +89,13 @@ class ReminderNotifier @Inject constructor(
     }
 
     /** Posts the reminder for [habitId]. No-ops (without crashing) when notifications are off. */
-    fun showHabitReminder(habitId: Long, habitTitle: String) {
+    fun showHabitReminder(habitId: Long, habitTitle: String): Boolean {
         ensureChannel()
-        if (!canPostNotifications()) return
+        if (!canPostNotifications()) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            context.getSystemService(NotificationManager::class.java)
+                ?.getNotificationChannel(CHANNEL_ID)?.importance == NotificationManager.IMPORTANCE_NONE
+        ) return false
 
         val notificationId = notificationIdFor(habitId)
         val intent = Intent(context, MainActivity::class.java)
@@ -108,7 +124,9 @@ class ReminderNotifier @Inject constructor(
 
         try {
             NotificationManagerCompat.from(context).notify(notificationId, notification)
+            return true
         } catch (_: SecurityException) {
+            return false
             // Permission revoked between the check and the post — nothing to do.
         }
     }

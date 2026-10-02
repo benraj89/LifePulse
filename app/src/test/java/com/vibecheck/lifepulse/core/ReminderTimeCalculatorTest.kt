@@ -171,6 +171,24 @@ class ReminderTimeCalculatorTest {
     // ---------- robustness ----------
 
     @Test
+    fun `monthly clamping does not move future reminders away from chosen day`() {
+        val february = next("2027-02-01T00:00", HabitFrequency.MONTHLY, 9, 0, dom = 31)
+        assertEquals(LocalDateTime.parse("2027-02-28T09:00"), february)
+        assertEquals(
+            LocalDateTime.parse("2027-03-31T09:00"),
+            ReminderTimeCalculator.nextTrigger(february, HabitFrequency.MONTHLY, 9, 0, dayOfMonth = 31)
+        )
+    }
+
+    @Test
+    fun `previous occurrence at exact trigger matches for every frequency`() {
+        val now = LocalDateTime.parse("2026-09-14T21:00")
+        HabitFrequency.entries.forEach { frequency ->
+            assertEquals(now, ReminderTimeCalculator.previousTrigger(now, frequency, 21, 0, 1, 14))
+        }
+    }
+
+    @Test
     fun `next trigger is always strictly in the future for every frequency`() {
         val now = LocalDateTime.parse("2026-09-14T21:00")
         HabitFrequency.entries.forEach { frequency ->

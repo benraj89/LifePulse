@@ -38,7 +38,8 @@ class LifePulseApp : Application(), Configuration.Provider {
 
         // Re-arm every habit alarm and deliver anything missed while the app was not running.
         // Idempotent: alarms are replaced, never duplicated.
-        ReminderSyncWorker.enqueueOneTimeSync(this)
+        // Foreground sync is enqueued by MainActivity. Do not start catch-up here:
+        // Application also starts for an alarm broadcast and would race its delivery.
 
         // Heartbeat that keeps alarms alive even if the user never opens the app again
         // (OEM battery managers, force-stop, app-update, ...).
