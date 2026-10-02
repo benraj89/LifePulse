@@ -2,6 +2,10 @@ package com.vibecheck.lifepulse.ui.habits
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vibecheck.lifepulse.core.currentDateFlow
+import com.vibecheck.lifepulse.domain.usecase.HabitActions
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
 import com.vibecheck.lifepulse.domain.model.Habit
 import com.vibecheck.lifepulse.domain.model.HabitFrequency
 import com.vibecheck.lifepulse.domain.repository.HabitRepository
@@ -26,16 +30,18 @@ data class HabitUiState(
 }
 
 @HiltViewModel
+@OptIn(ExperimentalCoroutinesApi::class)
 class HabitViewModel @Inject constructor(
     private val habitRepository: HabitRepository,
     private val reminderScheduler: ReminderScheduler,
-    private val reminderNotifier: ReminderNotifier
+    private val reminderNotifier: ReminderNotifier,
+    private val habitActions: HabitActions
 ) : ViewModel() {
 
-    private val today = LocalDate.now()
-
-    val uiState: StateFlow<HabitUiState> = habitRepository.observeHabitsForDate(today)
-        .map { HabitUiState(date = today, habits = it, isLoading = false) }
+    val uiState: StateFlow<HabitUiState> = currentDateFlow().flatMapLatest { date ->
+        habitRepository.observeHabitsForDate(date)
+            .map { HabitUiState(date = date, habits = it, isLoading = false) }
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HabitUiState())
 
     fun addHabit(
@@ -45,17 +51,10 @@ class HabitViewModel @Inject constructor(
         reminderMinute: Int? = null,
         reminderDayOfWeek: Int? = null,
         reminderDayOfMonth: Int? = null
-    ) = viewModelScope.launch {
-        if (title.isNotBlank()) {
-            val id = habitRepository.addHabit(
-                title, frequency, reminderHour, reminderMinute, reminderDayOfWeek, reminderDayOfMonth
-            )
-            habitRepository.getHabitById(id)?.let { reminderScheduler.scheduleHabitReminder(it) }
-        }
-    }
+    ) = habitActions.add(title, frequency, reminderHour, reminderMinute, reminderDayOfWeek, reminderDayOfMonth)
 
     fun toggleHabit(habitId: Long) = viewModelScope.launch {
-        habitRepository.toggleHabit(habitId, today)
+        habitRepository.toggleHabit(habitId, LocalDate.now())
     }
 
     fun deleteHabit(habitId: Long) = viewModelScope.launch {

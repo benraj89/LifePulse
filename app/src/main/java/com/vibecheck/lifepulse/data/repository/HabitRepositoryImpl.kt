@@ -1,6 +1,7 @@
 package com.vibecheck.lifepulse.data.repository
 
 import com.vibecheck.lifepulse.core.DateUtils.toKey
+import com.vibecheck.lifepulse.core.HabitPeriod
 import com.vibecheck.lifepulse.data.local.dao.HabitDao
 import com.vibecheck.lifepulse.data.local.entity.HabitEntity
 import com.vibecheck.lifepulse.domain.model.Habit
@@ -20,7 +21,10 @@ class HabitRepositoryImpl @Inject constructor(
 ) : HabitRepository {
 
     override fun observeHabitsForDate(date: LocalDate): Flow<List<Habit>> =
-        habitDao.observeHabitsWithStatus(date.toKey()).map { rows ->
+        habitDao.observeHabitsWithStatus(
+            date.toKey(), HabitPeriod.start(date, HabitFrequency.WEEKLY).toKey(),
+            HabitPeriod.start(date, HabitFrequency.MONTHLY).toKey()
+        ).map { rows ->
             rows.map { row ->
                 val dates = habitDao.getCompletionDates(row.habit.id)
                 Habit(
@@ -29,7 +33,7 @@ class HabitRepositoryImpl @Inject constructor(
                     frequency = HabitFrequency.fromRaw(row.habit.frequency),
                     createdAt = row.habit.createdAt,
                     completedToday = row.completedToday,
-                    currentStreak = calculateStreak(dates, date),
+                    currentStreak = calculateStreak(dates, date, HabitFrequency.fromRaw(row.habit.frequency)),
                     reminderHour = row.habit.reminderHour,
                     reminderMinute = row.habit.reminderMinute,
                     reminderDayOfWeek = row.habit.reminderDayOfWeek,
@@ -41,7 +45,7 @@ class HabitRepositoryImpl @Inject constructor(
     override fun observeTotalHabitCount(): Flow<Int> = habitDao.observeHabitCount()
 
     override fun observeCompletedCount(date: LocalDate): Flow<Int> =
-        habitDao.observeCompletedCount(date.toKey())
+        observeHabitsForDate(date).map { habits -> habits.count { it.completedToday } }
 
     override suspend fun addHabit(
         title: String,

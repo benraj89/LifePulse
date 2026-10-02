@@ -14,6 +14,7 @@ data class Habit(
     val title: String,
     val frequency: HabitFrequency,
     val createdAt: Long,
+    /** Completion in the current day, Monday–Sunday week, or calendar month. */
     val completedToday: Boolean = false,
     val currentStreak: Int = 0,
     /** Hour (0-23) the reminder should fire, or null when no reminder is configured. */

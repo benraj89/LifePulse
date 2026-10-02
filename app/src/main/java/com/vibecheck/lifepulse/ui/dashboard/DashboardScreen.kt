@@ -301,7 +301,14 @@ private fun HabitQuickRow(habit: Habit, onToggle: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(habit.title, style = NeoTypography.titleMedium, color = NeoColors.OnSurface)
                 Text(
-                    stringResource(R.string.dashboard_streak_format, habit.currentStreak),
+                    stringResource(
+                        when (habit.frequency) {
+                            com.vibecheck.lifepulse.domain.model.HabitFrequency.DAILY -> R.string.dashboard_streak_format
+                            com.vibecheck.lifepulse.domain.model.HabitFrequency.WEEKLY -> R.string.dashboard_week_streak_format
+                            com.vibecheck.lifepulse.domain.model.HabitFrequency.MONTHLY -> R.string.dashboard_month_streak_format
+                        },
+                        habit.currentStreak
+                    ),
                     style = NeoTypography.bodyMedium,
                     color = NeoColors.OnSurface.copy(alpha = 0.7f)
                 )

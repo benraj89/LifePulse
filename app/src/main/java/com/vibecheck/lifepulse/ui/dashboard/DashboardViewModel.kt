@@ -3,6 +3,9 @@ package com.vibecheck.lifepulse.ui.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vibecheck.lifepulse.core.DateUtils
+import com.vibecheck.lifepulse.core.currentDateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
 import com.vibecheck.lifepulse.domain.model.Category
 import com.vibecheck.lifepulse.domain.model.Expense
 import com.vibecheck.lifepulse.domain.model.Habit
@@ -34,18 +37,18 @@ data class DashboardUiState(
 }
 
 @HiltViewModel
+@OptIn(ExperimentalCoroutinesApi::class)
 class DashboardViewModel @Inject constructor(
     private val habitRepository: HabitRepository,
     private val expenseRepository: ExpenseRepository
 ) : ViewModel() {
 
-    private val today = LocalDate.now()
 
     /**
      * Single source of truth: every DAO Flow is combined into one immutable
      * UI state, so any DB write instantly re-renders the dashboard.
      */
-    val uiState: StateFlow<DashboardUiState> = combine(
+    val uiState: StateFlow<DashboardUiState> = currentDateFlow().flatMapLatest { today -> combine(
         habitRepository.observeHabitsForDate(today),
         expenseRepository.observeTotalInRange(DateUtils.startOfDay(today), DateUtils.endOfDay(today)),
         expenseRepository.observeTotalInRange(DateUtils.startOfMonth(today), DateUtils.endOfMonth(today)),
@@ -63,14 +66,14 @@ class DashboardViewModel @Inject constructor(
             categories = categories,
             isLoading = false
         )
-    }.stateIn(
+    } }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = DashboardUiState()
     )
 
     fun toggleHabit(habitId: Long) = viewModelScope.launch {
-        habitRepository.toggleHabit(habitId, today)
+        habitRepository.toggleHabit(habitId, LocalDate.now())
     }
 
     fun addExpense(

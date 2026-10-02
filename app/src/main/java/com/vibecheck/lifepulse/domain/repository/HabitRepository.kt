@@ -7,7 +7,7 @@ import java.time.LocalDate
 
 interface HabitRepository {
 
-    /** Habits enriched with today's completion flag and their current streak. */
+    /** Habits enriched with completion for the date's calendar period and the period streak. */
     fun observeHabitsForDate(date: LocalDate): Flow<List<Habit>>
 
     fun observeTotalHabitCount(): Flow<Int>

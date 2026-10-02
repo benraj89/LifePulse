@@ -17,6 +17,8 @@
     <string name="dashboard_spent_title">Today\'s Total Spent</string>
     <string name="dashboard_spent_this_month">%1$s this month</string>
     <string name="dashboard_streak_format">🔥 %1$d day streak</string>
+    <string name="dashboard_week_streak_format">🔥 %1$d week streak</string>
+    <string name="dashboard_month_streak_format">🔥 %1$d month streak</string>
     <string name="dashboard_empty_habits_title">No habits yet</string>
     <string name="dashboard_empty_habits_subtitle">Add your first habit to start a streak.</string>
     <string name="dashboard_empty_expenses_title">Nothing logged</string>
