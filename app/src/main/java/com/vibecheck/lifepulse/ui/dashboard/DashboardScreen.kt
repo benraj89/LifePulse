@@ -1,60 +1,33 @@
-package com.vibecheck.lifepulse.ui.dashboard
+﻿package com.vibecheck.lifepulse.ui.dashboard
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ProgressIndicatorDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.vibecheck.lifepulse.R
 import com.vibecheck.lifepulse.core.DateUtils
-import com.vibecheck.lifepulse.domain.model.Expense
-import com.vibecheck.lifepulse.domain.model.Habit
-import com.vibecheck.lifepulse.ui.components.AddExpenseSheet
+import com.vibecheck.lifepulse.core.Money
+import com.vibecheck.lifepulse.domain.model.*
 import com.vibecheck.lifepulse.ui.components.ColorDot
-import com.vibecheck.lifepulse.ui.components.EmptyState
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoBrutalismTheme
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoButton
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoCard
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoColors
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoTypography
-import java.text.NumberFormat
-import java.util.Locale
+import com.vibecheck.lifepulse.ui.expenses.TransactionSheet
+import com.vibecheck.lifepulse.ui.neobrutalism.*
+import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
@@ -63,316 +36,200 @@ fun DashboardScreen(
     onSeeAllExpenses: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val expenseSave by viewModel.expenseSave.collectAsStateWithLifecycle()
-    var showExpenseSheet by remember { mutableStateOf(false) }
+    val save by viewModel.expenseSave.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    var showEntry by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(message) {
+        message?.let { snackbar.showSnackbar(it); viewModel.clearMessage() }
+    }
+    // The navigation scaffold already handles the system bars and bottom navigation.
+    Scaffold(modifier = modifier, containerColor = NeoColors.Background, contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+        DashboardContent(state, Modifier.padding(padding), onSeeAllHabits, onSeeAllExpenses,
+            onAddEntry = { viewModel.resetExpenseSave(); showEntry = true }, onToggleHabit = { viewModel.toggleHabit(it) })
+    }
+    if (showEntry) TransactionSheet(accounts = state.accounts, categories = state.categories, state = save,
+        onDismiss = { showEntry = false }, onSave = viewModel::saveTransaction,
+        onAddCategory = { name, color, kind -> viewModel.addCategory(name, color, kind) },
+        onDeleteCategory = { viewModel.deleteCategory(it) })
+}
 
-    Scaffold(
-        modifier = modifier,
-        containerColor = NeoColors.Background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.dashboard_title),
-                        style = NeoTypography.headlineMedium,
-                        color = NeoColors.OnSurface
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = NeoColors.Background,
-                    titleContentColor = NeoColors.OnSurface
-                )
-            )
-        }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(NeoColors.Background)
-                .padding(innerPadding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                SummaryCard(
-                    habitProgressLabel = state.habitProgressLabel,
-                    habitProgressFraction = state.habitProgressFraction,
-                    spentToday = state.spentToday,
-                    spentThisMonth = state.spentThisMonth
-                )
-            }
-
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.height(IntrinsicSize.Max)
-                ) {
-                    NeoButton(
-                        text = stringResource(R.string.dashboard_add_expense),
-                        onClick = { viewModel.resetExpenseSave(); showExpenseSheet = true },
-                        backgroundColor = NeoColors.Primary,
-                        leadingIcon = {
-                            androidx.compose.material3.Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                tint = NeoColors.OnPrimary
-                            )
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    )
-                    NeoButton(
-                        text = stringResource(R.string.dashboard_all_habits),
-                        onClick = onSeeAllHabits,
-                        backgroundColor = NeoColors.Secondary,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                    )
+@Composable
+internal fun DashboardContent(state: DashboardUiState, modifier: Modifier = Modifier,
+                              onHabits: () -> Unit, onMoney: () -> Unit, onAddEntry: () -> Unit,
+                              onToggleHabit: (Long) -> Unit) {
+    LazyColumn(modifier.fillMaxSize().testTag("dashboard"), contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text("LifePulse", style = NeoTypography.headlineMedium, color = NeoColors.OnSurface)
+                    Text(state.date.format(DateTimeFormatter.ofPattern("EEE, dd MMM")), style = NeoTypography.bodySmall,
+                        color = NeoColors.OnSurface)
                 }
+                NeoButton("Add entry", onAddEntry, enabled = !state.isLoading && state.accounts.isNotEmpty(),
+                    backgroundColor = NeoColors.Coral, contentColor = NeoColors.OnSurface, shape = RoundedCornerShape(4.dp),
+                    shadowOffset = 3.dp, horizontalPadding = 12.dp, verticalPadding = 8.dp,
+                    leadingIcon = { Icon(Icons.Default.Add, null, Modifier.size(16.dp)) })
             }
-
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.dashboard_section_todays_habits),
-                    actionLabel = stringResource(R.string.action_see_all),
-                    onAction = onSeeAllHabits
-                )
-            }
-
+        }
+        if (state.isLoading) {
+            item { Text("Loading your overview…", style = NeoTypography.bodyMedium) }
+        } else {
+            item { TodayCard(state, onHabits, onMoney) }
+            item { MoneyOverview(state, onMoney) }
+            item { SectionHeader("Your habits", onHabits) }
             if (state.habits.isEmpty()) {
-                item {
-                    EmptyState(
-                        stringResource(R.string.dashboard_empty_habits_title),
-                        stringResource(R.string.dashboard_empty_habits_subtitle),
-                        imageRes = R.drawable.empty_hobbie
-                    )
-                }
+                item { DashboardEmpty("Start a habit", "Build a routine with a daily, weekly, or monthly habit.", onHabits) }
             } else {
-                items(state.habits, key = { "habit_${it.id}" }) { habit ->
-                    HabitQuickRow(habit = habit, onToggle = { viewModel.toggleHabit(habit.id) })
-                }
+                val habits = state.habits.sortedBy { it.completedToday }.take(4)
+                items(habits, key = { "habit_${it.id}" }) { habit -> HabitQuickRow(habit, { onToggleHabit(habit.id) }) }
             }
-
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.dashboard_section_recent_expenses),
-                    actionLabel = stringResource(R.string.action_see_all),
-                    onAction = onSeeAllExpenses
-                )
-            }
-
+            item { SectionHeader("Recent spending", onMoney) }
             if (state.recentExpenses.isEmpty()) {
-                item {
-                    EmptyState(
-                        stringResource(R.string.dashboard_empty_expenses_title),
-                        stringResource(R.string.dashboard_empty_expenses_subtitle),
-                        imageRes = R.drawable.empty_expense
-                    )
-                }
+                item { DashboardEmpty("No spending yet", "Tap Add entry to record your first expense.", onAddEntry) }
             } else {
-                items(state.recentExpenses, key = { "expense_${it.id}" }) { expense ->
-                    ExpenseRow(expense)
+                items(state.recentExpenses, key = { "expense_${it.id}" }) { ExpenseRow(it, state.accounts, onMoney) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TodayCard(state: DashboardUiState, onHabits: () -> Unit, onMoney: () -> Unit) {
+    DashboardCard("TODAY", NeoColors.Yellow) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            Column(Modifier.weight(1f).fillMaxHeight().clickable(onClick = onHabits).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Habit progress", style = NeoTypography.labelSmall, fontWeight = FontWeight.Black)
+                Text(state.habitProgressLabel, style = NeoTypography.titleLarge, fontWeight = FontWeight.Black)
+                Box(Modifier.fillMaxWidth().height(8.dp).background(NeoColors.Surface).border(2.dp, NeoColors.Border)) {
+                    if (state.habitProgressFraction > 0) Box(Modifier.fillMaxWidth(state.habitProgressFraction.coerceIn(0f, 1f))
+                        .fillMaxHeight().background(NeoColors.Ink))
                 }
+                Text(when {
+                    state.totalHabits == 0 -> "Ready when you are"
+                    state.completedHabits == state.totalHabits -> "All done for now!"
+                    else -> "${state.totalHabits - state.completedHabits} still to do"
+                }, style = NeoTypography.bodySmall)
             }
+            Box(Modifier.width(3.dp).fillMaxHeight().background(NeoColors.Border))
+            OverviewStat("Spent today", state.spentToday,
+                Modifier.weight(1f).fillMaxHeight().background(NeoColors.Surface).clickable(onClick = onMoney))
         }
-    }
-
-    if (showExpenseSheet) {
-        AddExpenseSheet(
-            categories = state.categories,
-            accounts = state.accounts,
-            onDismiss = { showExpenseSheet = false },
-            onSave = viewModel::addExpense,
-            onAddCategory = { name, colorHex -> viewModel.addCategory(name, colorHex) },
-            onDeleteCategory = { category -> viewModel.deleteCategory(category.id) },
-            saving = expenseSave.saving, saveError = expenseSave.error, saveSucceeded = expenseSave.saved
-        )
     }
 }
 
-/** Top summary card: habit progress on the left, today's spend on the right. */
 @Composable
-fun SummaryCard(
-    habitProgressLabel: String,
-    habitProgressFraction: Float,
-    spentToday: Double,
-    spentThisMonth: Double,
-    modifier: Modifier = Modifier
-) {
-    NeoCard(
-        modifier = modifier.fillMaxWidth(),
-        backgroundColor = NeoColors.Accent,
-        contentPadding = 20.dp
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.today_s_habit_progress),
-                    style = NeoTypography.labelLarge,
-                    color = NeoColors.OnSurface
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = habitProgressLabel,
-                    style = NeoTypography.headlineMedium,
-                    color = NeoColors.OnSurface
-                )
-                Spacer(Modifier.height(10.dp))
-                LinearProgressIndicator(
-                    progress = { habitProgressFraction },
-                    modifier = Modifier.fillMaxWidth(0.85f),
-                    color = NeoColors.OnSurface,
-                    trackColor = NeoColors.Surface,
-                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap
-                )
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    stringResource(R.string.today_s_total_spent),
-                    style = NeoTypography.labelLarge,
-                    color = NeoColors.OnSurface
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = spentToday.asCurrency(),
-                    style = NeoTypography.headlineMedium,
-                    color = NeoColors.OnSurface
-                )
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = stringResource(R.string.this_month, spentThisMonth.asCurrency()),
-                    style = NeoTypography.bodyMedium,
-                    color = NeoColors.OnSurface.copy(alpha = 0.7f)
-                )
+private fun MoneyOverview(state: DashboardUiState, onMoney: () -> Unit) {
+    DashboardCard("YOUR MONEY · ${state.date.format(DateTimeFormatter.ofPattern("MMM")).uppercase()}", NeoColors.Surface, onMoney) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            OverviewStat("Account balance", state.accountBalance, Modifier.weight(1f).fillMaxHeight().background(NeoColors.MintGreen))
+            Box(Modifier.width(3.dp).fillMaxHeight().background(NeoColors.Border))
+            OverviewStat("Month's spending", state.spentThisMonth, Modifier.weight(1f).fillMaxHeight().background(NeoColors.Yellow))
+        }
+        HorizontalDivider(thickness = 3.dp, color = NeoColors.Border)
+        OverviewStat("Month's income", state.incomeThisMonth, Modifier.fillMaxWidth(), inline = true)
+        if (state.owedToYou > 0 || state.owedByYou > 0) {
+            HorizontalDivider(thickness = 3.dp, color = NeoColors.Border)
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                OverviewStat("People owe you", state.owedToYou, Modifier.weight(1f).fillMaxHeight().background(NeoColors.Cyan))
+                Box(Modifier.width(3.dp).fillMaxHeight().background(NeoColors.Border))
+                OverviewStat("You owe people", state.owedByYou, Modifier.weight(1f).fillMaxHeight())
             }
         }
     }
 }
 
 @Composable
-private fun SectionHeader(title: String, actionLabel: String, onAction: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(title, style = NeoTypography.titleLarge, color = NeoColors.OnSurface)
-        TextButton(onClick = onAction) {
-            Text(
-                text = actionLabel,
-                style = NeoTypography.labelLarge,
-                color = NeoColors.OnSurface
-            )
+private fun DashboardCard(title: String, color: Color, onClick: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
+    NeoCard(Modifier.fillMaxWidth().padding(end = 4.dp, bottom = 4.dp)
+        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+        backgroundColor = color, shape = RoundedCornerShape(4.dp), contentPadding = 3.dp) {
+        Column(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth().background(NeoColors.Ink).padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Text(title, style = NeoTypography.labelSmall, fontWeight = FontWeight.Black, color = NeoColors.White,
+                    modifier = Modifier.weight(1f))
+                Text(if (onClick != null) "→" else "///", color = NeoColors.Lime, style = NeoTypography.labelLarge)
+            }
+            content()
         }
+    }
+}
+
+@Composable
+private fun OverviewStat(label: String, amount: Long, modifier: Modifier, inline: Boolean = false) {
+    if (inline) Row(modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(label, style = NeoTypography.labelSmall, modifier = Modifier.weight(1f))
+        Text(Money.format(amount), style = NeoTypography.titleMedium, fontWeight = FontWeight.Black)
+    } else Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = NeoTypography.labelSmall, fontWeight = FontWeight.Black)
+        Text(Money.format(amount), style = NeoTypography.titleLarge, fontWeight = FontWeight.Black)
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, onAction: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, style = NeoTypography.titleMedium, modifier = Modifier.weight(1f), color = NeoColors.OnSurface)
+        TextButton(onClick = onAction) { Text("See all", style = NeoTypography.labelLarge, color = NeoColors.OnSurface) }
+    }
+}
+
+@Composable
+private fun DashboardEmpty(title: String, hint: String, onClick: () -> Unit) {
+    NeoColumnCard(Modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(4.dp), contentPadding = 12.dp) {
+        Text(title, style = NeoTypography.titleMedium)
+        Text(hint, style = NeoTypography.bodySmall)
     }
 }
 
 @Composable
 private fun HabitQuickRow(habit: Habit, onToggle: () -> Unit) {
-    NeoCard(
-        modifier = Modifier.fillMaxWidth(),
-        backgroundColor = NeoColors.Surface,
-        shape = RoundedCornerShape(12.dp),
-        borderWidth = 2.dp,
-        shadowOffsetX = 4.dp,
-        shadowOffsetY = 4.dp,
-        contentPadding = 12.dp
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Checkbox(
-                checked = habit.completedToday,
-                onCheckedChange = { onToggle() },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = NeoColors.Primary,
-                    checkmarkColor = NeoColors.OnSurface,
-                    uncheckedColor = NeoColors.Border
-                )
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(habit.title, style = NeoTypography.titleMedium, color = NeoColors.OnSurface)
-                Text(
-                    stringResource(
-                        when (habit.frequency) {
-                            com.vibecheck.lifepulse.domain.model.HabitFrequency.DAILY -> R.string.dashboard_streak_format
-                            com.vibecheck.lifepulse.domain.model.HabitFrequency.WEEKLY -> R.string.dashboard_week_streak_format
-                            com.vibecheck.lifepulse.domain.model.HabitFrequency.MONTHLY -> R.string.dashboard_month_streak_format
-                        },
-                        habit.currentStreak
-                    ),
-                    style = NeoTypography.bodyMedium,
-                    color = NeoColors.OnSurface.copy(alpha = 0.7f)
-                )
+    NeoCard(Modifier.fillMaxWidth().testTag("dashboard_habit_${habit.id}"),
+        backgroundColor = if (habit.completedToday) NeoColors.MintGreen else NeoColors.Surface,
+        shape = RoundedCornerShape(4.dp), contentPadding = 6.dp, shadowOffsetX = 3.dp, shadowOffsetY = 3.dp) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(habit.completedToday, { onToggle() }, colors = CheckboxDefaults.colors(
+                checkedColor = NeoColors.Ink, checkmarkColor = NeoColors.Lime, uncheckedColor = NeoColors.Border))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(habit.title, style = NeoTypography.titleMedium)
+                val period = when (habit.frequency) {
+                    HabitFrequency.DAILY -> "Today"
+                    HabitFrequency.WEEKLY -> "This week"
+                    HabitFrequency.MONTHLY -> "This month"
+                }
+                val unit = when (habit.frequency) {
+                    HabitFrequency.DAILY -> "day"
+                    HabitFrequency.WEEKLY -> "week"
+                    HabitFrequency.MONTHLY -> "month"
+                }
+                Text("$period · ${if (habit.completedToday) "Done" else "To do"}" +
+                    (if (habit.currentStreak > 0) " · ${habit.currentStreak} $unit streak" else ""),
+                    style = NeoTypography.bodySmall)
             }
         }
     }
 }
 
 @Composable
-private fun ExpenseRow(expense: Expense) {
-    NeoCard(
-        modifier = Modifier.fillMaxWidth(),
-        backgroundColor = NeoColors.Surface,
-        shape = RoundedCornerShape(12.dp),
-        borderWidth = 2.dp,
-        shadowOffsetX = 4.dp,
-        shadowOffsetY = 4.dp,
-        contentPadding = 12.dp
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            ColorDot(expense.categoryColorHex, size = 16)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(expense.categoryName, style = NeoTypography.titleMedium, color = NeoColors.OnSurface)
-                Text(
-                    listOfNotNull(
-                        expense.note.takeIf { it.isNotBlank() },
-                        DateUtils.formatTimestamp(expense.dateTimestamp)
-                    ).joinToString(" • "),
-                    style = NeoTypography.bodyMedium,
-                    color = NeoColors.OnSurface.copy(alpha = 0.7f)
-                )
+private fun ExpenseRow(expense: Expense, accounts: List<Account>, onClick: () -> Unit) {
+    NeoCard(Modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(4.dp),
+        contentPadding = 10.dp, shadowOffsetX = 3.dp, shadowOffsetY = 3.dp) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ColorDot(expense.categoryColorHex, size = 12)
+            Column(Modifier.weight(1f)) {
+                Text(expense.categoryName, style = NeoTypography.titleMedium)
+                Text(listOfNotNull(accounts.firstOrNull { it.id == expense.accountId }?.name,
+                    DateUtils.formatTimestamp(expense.dateTimestamp, "dd MMM")).joinToString(" · "), style = NeoTypography.bodySmall)
+                if (expense.note.isNotBlank()) Text(expense.note, style = NeoTypography.bodySmall, maxLines = 2)
             }
-            Text(
-                expense.amount.asCurrency(),
-                style = NeoTypography.titleMedium,
-                fontWeight = FontWeight.Black,
-                color = NeoColors.OnSurface
-            )
+            Text(Money.format(expense.amountMinor), style = NeoTypography.titleMedium, fontWeight = FontWeight.Black,
+                modifier = Modifier.widthIn(max = 140.dp))
         }
     }
 }
-
-fun Double.asCurrency(): String =
-    com.vibecheck.lifepulse.core.Money.format(com.vibecheck.lifepulse.core.Money.fromLegacy(this))
-
-@Preview(showBackground = true)
-@Composable
-private fun SummaryCardPreview() {
-    NeoBrutalismTheme {
-        SummaryCard(
-            habitProgressLabel = "3/5 Completed",
-            habitProgressFraction = 0.6f,
-            spentToday = 24.50,
-            spentThisMonth = 412.30
-        )
-    }
-}
-
-
-
