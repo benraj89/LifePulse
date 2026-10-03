@@ -9,13 +9,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import com.vibecheck.lifepulse.core.*
 import com.vibecheck.lifepulse.domain.model.*
 import com.vibecheck.lifepulse.ui.components.ColorDot
@@ -28,20 +35,7 @@ internal fun LazyListScope.spendingSection(
     onCalendar: () -> Unit, onBreakdown: () -> Unit,
     onAccount: (Long?) -> Unit, onEdit: (Expense) -> Unit
 ) {
-    item {
-        NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.PastelYellow) {
-            TextButton(onClick = onCalendar, contentPadding = PaddingValues(0.dp)) {
-                Text(state.selectedMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")) + " ▾", style = NeoTypography.titleMedium, color = NeoColors.OnSurface)
-            }
-            Text("You spent", style = NeoTypography.bodyMedium)
-            Text(Money.format(state.spentMinor), style = NeoTypography.headlineMedium, fontWeight = FontWeight.Black)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Today ${Money.format(state.totalToday)}", style = NeoTypography.bodySmall)
-                Text("Income ${Money.format(state.incomeMinor)}", style = NeoTypography.bodySmall)
-            }
-            TextButton(onClick = onBreakdown) { Text("See category breakdown →", style = NeoTypography.labelLarge, color = NeoColors.OnSurface) }
-        }
-    }
+    item { SpendingSummary(state, onCalendar, onBreakdown) }
     item {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Your entries", style = NeoTypography.titleLarge)
@@ -68,12 +62,53 @@ internal fun LazyListScope.spendingSection(
     }
 }
 
+@Composable
+private fun SpendingSummary(state: ExpenseUiState, onCalendar: () -> Unit, onBreakdown: () -> Unit) {
+    FinanceSummaryCard("MONTHLY SPENDING", NeoColors.Yellow, NeoColors.Lime) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f)) { SummaryAmount(state.spentMinor) }
+                Box(Modifier.background(NeoColors.Cyan).border(2.dp, NeoColors.Border).clickable(onClick = onCalendar)
+                    .heightIn(min = 48.dp).padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
+                    Text(state.selectedMonth.format(DateTimeFormatter.ofPattern("MMM yyyy")) + " ▾",
+                        style = NeoTypography.labelSmall, fontWeight = FontWeight.Black, color = NeoColors.OnSurface)
+                }
+            }
+            HorizontalDivider(thickness = 3.dp, color = NeoColors.Border)
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                SummaryStat("SPENT TODAY", state.totalToday, Modifier.weight(1f).fillMaxHeight().background(NeoColors.Surface))
+                Box(Modifier.width(3.dp).fillMaxHeight().background(NeoColors.Border))
+                SummaryStat("MONTH'S INCOME", state.incomeMinor, Modifier.weight(1f).fillMaxHeight().background(NeoColors.MintGreen))
+            }
+            HorizontalDivider(thickness = 3.dp, color = NeoColors.Border)
+            Row(Modifier.fillMaxWidth().background(NeoColors.Surface).clickable(onClick = onBreakdown)
+                .heightIn(min = 48.dp).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("See category breakdown", style = NeoTypography.labelLarge, fontWeight = FontWeight.Black, color = NeoColors.OnSurface,
+                    modifier = Modifier.weight(1f))
+                Text("→", style = NeoTypography.titleLarge, fontWeight = FontWeight.Black, color = NeoColors.OnSurface)
+            }
+    }
+}
+
+@Composable
+private fun SummaryStat(label: String, amount: Long, modifier: Modifier) {
+    Column(modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, style = NeoTypography.labelSmall, fontWeight = FontWeight.Black, color = NeoColors.OnSurface)
+        Text(Money.format(amount), style = NeoTypography.titleMedium, fontWeight = FontWeight.Black, color = NeoColors.OnSurface)
+    }
+}
+
 internal fun LazyListScope.accountsSection(state: ExpenseUiState, onAccount: (Account?) -> Unit,
                                           onCurrency: () -> Unit, onEdit: (Expense) -> Unit) {
     item {
-        NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.MintGreen) {
-            MoneyStat("Money in your accounts", state.balances.values.sum())
-            Text("Based on the entries you've recorded", style = NeoTypography.bodySmall)
+        FinanceSummaryCard("YOUR TOTAL BALANCE", NeoColors.MintGreen, NeoColors.Cyan) {
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                SummaryAmount(state.balances.values.sum())
+            }
+            HorizontalDivider(thickness = 3.dp, color = NeoColors.Border)
+            Text("Based on the entries you've recorded", style = NeoTypography.bodySmall,
+                modifier = Modifier.fillMaxWidth().background(NeoColors.Surface).padding(horizontal = 12.dp, vertical = 8.dp))
         }
     }
     item {
@@ -83,13 +118,16 @@ internal fun LazyListScope.accountsSection(state: ExpenseUiState, onAccount: (Ac
         }
     }
     items(state.accounts, key = { "account_${it.id}" }) { account ->
-        NeoColumnCard(Modifier.fillMaxWidth().clickable { onAccount(account) }, backgroundColor = NeoColors.Surface) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(account.name, style = NeoTypography.titleMedium)
+        NeoCard(Modifier.fillMaxWidth().padding(end = 3.dp, bottom = 3.dp).clickable { onAccount(account) },
+            backgroundColor = NeoColors.Surface, shape = RoundedCornerShape(4.dp), borderWidth = 3.dp,
+            shadowOffsetX = 6.dp, shadowOffsetY = 6.dp, contentPadding = 3.dp) {
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.width(10.dp).fillMaxHeight().background(NeoColors.Cyan))
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(account.name, style = NeoTypography.titleMedium, fontWeight = FontWeight.Black)
                     Text(Money.format(state.balances[account.id] ?: account.openingMinor), style = NeoTypography.titleLarge, fontWeight = FontWeight.Black)
                 }
-                Icon(Icons.Default.Edit, "Edit account", modifier = Modifier.size(16.dp), tint = NeoColors.OnSurface)
+                Icon(Icons.Default.Edit, "Edit account", modifier = Modifier.padding(end = 16.dp).size(16.dp), tint = NeoColors.OnSurface)
             }
         }
     }
@@ -108,10 +146,13 @@ internal fun LazyListScope.accountsSection(state: ExpenseUiState, onAccount: (Ac
 internal fun LazyListScope.owedSection(state: ExpenseUiState, showSettled: Boolean, onSettled: (Boolean) -> Unit,
                                       onEdit: (Expense) -> Unit, onRepay: (Expense) -> Unit) {
     item {
-        NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.PaleCyan) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column(Modifier.weight(1f)) { MoneyStat("People owe you", state.outstandingLoans.filter { it.type == TransactionType.LEND }.sumOf { Ledger.outstanding(it, state.transactions) }) }
-                Column(Modifier.weight(1f)) { MoneyStat("You owe people", state.outstandingLoans.filter { it.type == TransactionType.BORROW }.sumOf { Ledger.outstanding(it, state.transactions) }) }
+        FinanceSummaryCard("MONEY OWED", NeoColors.Cyan, NeoColors.Yellow) {
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                SummaryStat("PEOPLE OWE YOU", state.outstandingLoans.filter { it.type == TransactionType.LEND }
+                    .sumOf { Ledger.outstanding(it, state.transactions) }, Modifier.weight(1f).fillMaxHeight())
+                Box(Modifier.width(3.dp).fillMaxHeight().background(NeoColors.Border))
+                SummaryStat("YOU OWE PEOPLE", state.outstandingLoans.filter { it.type == TransactionType.BORROW }
+                    .sumOf { Ledger.outstanding(it, state.transactions) }, Modifier.weight(1f).fillMaxHeight().background(NeoColors.Yellow))
             }
         }
     }
@@ -126,8 +167,15 @@ internal fun LazyListScope.owedSection(state: ExpenseUiState, showSettled: Boole
     items(loans, key = { "loan_${it.id}" }) { loan ->
         val remaining = Ledger.outstanding(loan, state.transactions)
         var showRepayments by remember { mutableStateOf(false) }
-        NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.Surface) {
-            Text(loan.person, style = NeoTypography.titleLarge)
+        NeoColumnCard(Modifier.fillMaxWidth().padding(end = 3.dp, bottom = 3.dp), backgroundColor = NeoColors.Surface,
+            shape = RoundedCornerShape(4.dp), contentPadding = 10.dp) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(loan.person, style = NeoTypography.titleLarge, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                Text(if (remaining == 0L) "REPAID" else if (loan.type == TransactionType.LEND) "LENT" else "BORROWED",
+                    style = NeoTypography.labelSmall, fontWeight = FontWeight.Black,
+                    modifier = Modifier.background(if (remaining == 0L) NeoColors.MintGreen else if (loan.type == TransactionType.LEND) NeoColors.Cyan else NeoColors.Yellow)
+                        .border(2.dp, NeoColors.Border).padding(horizontal = 8.dp, vertical = 6.dp))
+            }
             Text(if (remaining == 0L) "Fully repaid" else if (loan.type == TransactionType.LEND) "Owes you ${Money.format(remaining)}" else "You owe ${Money.format(remaining)}", style = NeoTypography.titleMedium)
             Text("${Money.format(loan.amountMinor)} ${if (loan.type == TransactionType.LEND) "lent" else "borrowed"} · ${DateUtils.formatTimestamp(loan.dateTimestamp, "dd MMM yyyy")}", style = NeoTypography.bodySmall)
             if (loan.note.isNotBlank()) Text(loan.note, style = NeoTypography.bodyMedium)
@@ -151,36 +199,81 @@ internal fun LazyListScope.owedSection(state: ExpenseUiState, showSettled: Boole
 @Composable
 private fun EntryFilterMenu(state: ExpenseUiState, filter: String, onFilter: (String) -> Unit, onAccount: (Long?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    val active = filter != "All" || state.selectedAccountId != null
+    val shape = RoundedCornerShape(4.dp)
     Box {
-        TextButton(onClick = { expanded = true }) {
-            Icon(Icons.Default.FilterList, null, modifier = Modifier.size(16.dp), tint = NeoColors.OnSurface)
-            Spacer(Modifier.width(6.dp))
-            Text("Filter", color = NeoColors.OnSurface)
-        }
-        DropdownMenu(expanded, { expanded = false }, modifier = Modifier.background(NeoColors.Surface).border(2.dp, NeoColors.Border)) {
+        NeoButton("Filter", { expanded = true }, backgroundColor = if (active) NeoColors.Cyan else NeoColors.Surface,
+            contentColor = NeoColors.OnSurface, shape = shape, shadowOffset = 3.dp,
+            horizontalPadding = 12.dp, verticalPadding = 8.dp,
+            leadingIcon = { Icon(Icons.Default.FilterList, null, modifier = Modifier.size(16.dp)) })
+        DropdownMenu(expanded, { expanded = false }, shape = shape, containerColor = NeoColors.Surface,
+            tonalElevation = 0.dp, shadowElevation = 0.dp,
+            modifier = Modifier.widthIn(min = 224.dp, max = 300.dp)
+                .neoHardShadow(shape = shape, offsetX = 5.dp, offsetY = 5.dp)
+                .background(NeoColors.Surface, shape)
+                .border(3.dp, NeoColors.Border, shape)) {
+            Text("ENTRY TYPE", style = NeoTypography.labelSmall, fontWeight = FontWeight.Black,
+                color = NeoColors.OnSurface, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             listOf("All", "Expenses", "Income", "Transfers").forEach { option ->
-                DropdownMenuItem(text = { Text((if (filter == option) "✓ " else "") + if (option == "All") "All entries" else option) },
-                    onClick = { onFilter(option); expanded = false })
+                FilterMenuOption(if (option == "All") "All entries" else option, filter == option,
+                    { onFilter(option); expanded = false })
             }
             if (state.accounts.size > 1) {
-                HorizontalDivider(color = NeoColors.Border)
-                DropdownMenuItem(text = { Text("All accounts") }, onClick = { onAccount(null); expanded = false })
-                state.accounts.forEach { account -> DropdownMenuItem(text = { Text(account.name) }, onClick = { onAccount(account.id); expanded = false }) }
+                HorizontalDivider(thickness = 3.dp, color = NeoColors.Border, modifier = Modifier.padding(vertical = 8.dp))
+                Text("ACCOUNT", style = NeoTypography.labelSmall, fontWeight = FontWeight.Black,
+                    color = NeoColors.OnSurface, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                FilterMenuOption("All accounts", state.selectedAccountId == null, { onAccount(null); expanded = false })
+                state.accounts.forEach { account -> FilterMenuOption(account.name, state.selectedAccountId == account.id,
+                    { onAccount(account.id); expanded = false }) }
             }
         }
     }
 }
 
 @Composable
-private fun MoneyStat(label: String, amount: Long) {
-    Text(label, style = NeoTypography.bodyMedium)
-    Text(Money.format(amount), style = NeoTypography.titleLarge, fontWeight = FontWeight.Black)
+private fun FilterMenuOption(label: String, isSelected: Boolean, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = { Text(label, style = NeoTypography.bodyMedium, color = NeoColors.OnSurface,
+            fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium) },
+        leadingIcon = { if (isSelected) Icon(Icons.Default.Check, null, tint = NeoColors.OnSurface, modifier = Modifier.size(16.dp))
+            else Spacer(Modifier.size(16.dp)) },
+        onClick = onClick,
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+            .background(if (isSelected) NeoColors.Cyan else NeoColors.Surface)
+            .then(if (isSelected) Modifier.border(2.dp, NeoColors.Border) else Modifier)
+            .semantics { selected = isSelected }
+    )
+}
+
+@Composable
+private fun FinanceSummaryCard(title: String, background: Color, accent: Color, content: @Composable ColumnScope.() -> Unit) {
+    NeoCard(Modifier.fillMaxWidth().padding(end = 4.dp, bottom = 4.dp), backgroundColor = background,
+        shape = RoundedCornerShape(4.dp), borderWidth = 3.dp, shadowOffsetX = 6.dp, shadowOffsetY = 6.dp, contentPadding = 3.dp) {
+        Column(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth().background(NeoColors.Ink).padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(title, style = NeoTypography.labelSmall, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
+                    color = NeoColors.White, modifier = Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    repeat(3) { Box(Modifier.size(width = 4.dp, height = 16.dp).rotate(20f).background(accent)) }
+                }
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SummaryAmount(value: Long) {
+    val amount = Money.format(value)
+    Text(amount, style = NeoTypography.headlineMedium, fontSize = if (amount.length <= 12) 28.sp else 22.sp,
+        lineHeight = if (amount.length <= 12) 34.sp else 28.sp, fontWeight = FontWeight.Black, color = NeoColors.OnSurface)
 }
 
 @Composable
 private fun FinanceEmpty(title: String, hint: String) {
-    NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.Surface) {
-        Text(title, style = NeoTypography.titleLarge)
+    NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.Surface, contentPadding = 12.dp) {
+        Text(title, style = NeoTypography.titleMedium)
         Text(hint, style = NeoTypography.bodyMedium)
     }
 }
