@@ -30,10 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.vibecheck.lifepulse.R
 import com.vibecheck.lifepulse.core.DateUtils
 import com.vibecheck.lifepulse.domain.model.Category
+import com.vibecheck.lifepulse.domain.model.Account
+import com.vibecheck.lifepulse.ui.neobrutalism.NeoChoiceField
 import com.vibecheck.lifepulse.ui.neobrutalism.NeoButton
 import com.vibecheck.lifepulse.ui.neobrutalism.NeoCard
 import com.vibecheck.lifepulse.ui.neobrutalism.NeoColors
@@ -42,6 +45,7 @@ import com.vibecheck.lifepulse.ui.neobrutalism.NeoTextField
 import com.vibecheck.lifepulse.ui.neobrutalism.NeoTypography
 import java.time.LocalDate
 import java.time.ZoneId
+import com.vibecheck.lifepulse.core.Money
 
 /**
  * Reusable "Add Expense" modal bottom sheet, fully state-hoisted:
@@ -51,27 +55,35 @@ import java.time.ZoneId
 @Composable
 fun AddExpenseSheet(
     categories: List<Category>,
+    accounts: List<Account>,
     onDismiss: () -> Unit,
-    onSave: (categoryId: Long, amount: Double, note: String, timestamp: Long) -> Unit,
+    onSave: (accountId: Long, categoryId: Long, amountMinor: Long, note: String, timestamp: Long) -> Unit,
     onAddCategory: ((name: String, colorHex: String) -> Unit)? = null,
-    onDeleteCategory: ((Category) -> Unit)? = null
+    onDeleteCategory: ((Category) -> Unit)? = null,
+    saving: Boolean = false,
+    saveError: String? = null,
+    saveSucceeded: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var amountText by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
-    var selectedCategory by remember(categories) { mutableStateOf(categories.firstOrNull()) }
+    var selectedCategoryId by remember { mutableStateOf(categories.firstOrNull()?.id) }
+    val selectedCategory = categories.firstOrNull { it.id == selectedCategoryId }
+    var accountId by remember { mutableStateOf(accounts.firstOrNull()?.id) }
+    LaunchedEffect(accounts) { if (accounts.none { it.id == accountId }) accountId = accounts.firstOrNull()?.id }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var showDatePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(categories) {
-        if (selectedCategory == null) selectedCategory = categories.firstOrNull()
+        if (selectedCategory == null) selectedCategoryId = categories.firstOrNull()?.id
     }
+    LaunchedEffect(saveSucceeded) { if (saveSucceeded) onDismiss() }
 
-    val amount = amountText.toDoubleOrNull()
-    val isValid = amount != null && amount > 0.0 && selectedCategory != null
+    val amountMinor = Money.parse(amountText)
+    val isValid = amountMinor != null && amountMinor > 0 && selectedCategory != null && accountId != null && !saving && !selectedDate.isAfter(LocalDate.now())
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!saving) onDismiss() },
         sheetState = sheetState,
         containerColor = NeoColors.PastelYellow
     ) {
@@ -94,21 +106,23 @@ fun AddExpenseSheet(
             NeoTextField(
                 value = amountText,
                 onValueChange = { input ->
-                    if (input.isEmpty() || input.matches(Regex("^\\d*\\.?\\d{0,3}$"))) {
+                    if (!saving && (input.isEmpty() || input.matches(Regex("^\\d{0,12}\\.?\\d{0,2}$")))) {
                         amountText = input
                     }
                 },
                 placeholder = stringResource(R.string.add_expense_amount_label),
                 backgroundColor = NeoColors.PaleCyan,
                 focusedShadowColor = NeoColors.HotPink,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth()
             )
 
+            NeoChoiceField("Pay from", accounts.map { it.id.toString() to it.name }, accountId?.toString(),
+                { accountId = it.toLong() }, enabled = !saving)
             CategoryDropdown(
                 categories = categories,
                 selected = selectedCategory,
-                onSelect = { selectedCategory = it },
+                onSelect = { selectedCategoryId = it.id },
                 backgroundColor = NeoColors.SkyBlue,
                 shadowColor = NeoColors.DeepPurple,
                 onAddCategory = onAddCategory,
@@ -167,16 +181,18 @@ fun AddExpenseSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            saveError?.let { Text(it, style = NeoTypography.bodyMedium, color = NeoColors.Danger) }
+            if (selectedDate.isAfter(LocalDate.now())) Text("Choose today or an earlier date.", color = NeoColors.Danger)
             NeoButton(
-                text = stringResource(R.string.add_expense_save),
+                text = if (saving) "Saving…" else stringResource(R.string.add_expense_save),
                 onClick = {
                     val category = selectedCategory ?: return@NeoButton
                     val timestamp = selectedDate.atTime(java.time.LocalTime.now())
                         .atZone(ZoneId.systemDefault())
                         .toInstant()
                         .toEpochMilli()
-                    onSave(category.id, amount ?: return@NeoButton, note, timestamp)
-                    onDismiss()
+                    if (selectedDate.isAfter(LocalDate.now())) return@NeoButton
+                    onSave(accountId ?: return@NeoButton, category.id, amountMinor ?: return@NeoButton, note, timestamp)
                 },
                 enabled = isValid,
                 backgroundColor = NeoColors.Coral,

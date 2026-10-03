@@ -3,6 +3,7 @@ package com.vibecheck.lifepulse.data.local.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.ColumnInfo
 
 @Entity(
     tableName = "categories",
@@ -20,6 +21,7 @@ data class CategoryEntity(
      * past expenses referencing it keep their name/color instead of being cascade-deleted.
      * Deleted categories are hidden from the category picker/list.
      */
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    @ColumnInfo(defaultValue = "'EXPENSE'") val kind: String = "EXPENSE"
 )
 

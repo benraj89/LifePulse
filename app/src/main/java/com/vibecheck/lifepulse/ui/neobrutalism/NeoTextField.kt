@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.TextStyle
 import com.vibecheck.lifepulse.ui.util.rememberKeyboardDismisser
 
 /**
@@ -51,7 +52,8 @@ fun NeoTextField(
     borderWidth: Dp = 3.dp,
     focusedBorderWidth: Dp = 4.dp,
     keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-    keyboardActions: KeyboardActions? = null
+    keyboardActions: KeyboardActions? = null,
+    textStyle: TextStyle = NeoTypography.bodyLarge
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
@@ -83,7 +85,7 @@ fun NeoTextField(
         if (value.isEmpty()) {
             Text(
                 text = placeholder,
-                style = NeoTypography.bodyLarge,
+                style = textStyle,
                 color = NeoColors.Black.copy(alpha = 0.4f)
             )
         }
@@ -93,7 +95,7 @@ fun NeoTextField(
             singleLine = singleLine,
             keyboardOptions = keyboardOptions,
             keyboardActions = resolvedKeyboardActions,
-            textStyle = NeoTypography.bodyLarge.copy(color = NeoColors.OnSurface),
+            textStyle = textStyle.copy(color = NeoColors.OnSurface),
             interactionSource = interactionSource,
             cursorBrush = androidx.compose.ui.graphics.SolidColor(NeoColors.Black),
             modifier = Modifier

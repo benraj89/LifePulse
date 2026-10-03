@@ -17,6 +17,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import com.vibecheck.lifepulse.ui.expenses.SaveState
+import com.vibecheck.lifepulse.domain.model.TransactionType
+import com.vibecheck.lifepulse.domain.model.Account
+import com.vibecheck.lifepulse.domain.model.TransactionDraft
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -29,6 +39,7 @@ data class DashboardUiState(
     val spentThisMonth: Double = 0.0,
     val recentExpenses: List<Expense> = emptyList(),
     val categories: List<Category> = emptyList(),
+    val accounts: List<Account> = emptyList(),
     val isLoading: Boolean = true
 ) {
     val habitProgressLabel: String get() = "$completedHabits/$totalHabits Completed"
@@ -42,6 +53,10 @@ class DashboardViewModel @Inject constructor(
     private val habitRepository: HabitRepository,
     private val expenseRepository: ExpenseRepository
 ) : ViewModel() {
+    private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val _expenseSave = MutableStateFlow(SaveState())
+    val expenseSave = _expenseSave.asStateFlow()
+    fun resetExpenseSave() { _expenseSave.value = SaveState() }
 
 
     /**
@@ -53,8 +68,8 @@ class DashboardViewModel @Inject constructor(
         expenseRepository.observeTotalInRange(DateUtils.startOfDay(today), DateUtils.endOfDay(today)),
         expenseRepository.observeTotalInRange(DateUtils.startOfMonth(today), DateUtils.endOfMonth(today)),
         expenseRepository.observeRecentExpenses(limit = 5),
-        expenseRepository.observeCategories()
-    ) { habits, spentToday, spentMonth, recent, categories ->
+        combine(expenseRepository.observeCategories(), expenseRepository.observeAccounts()) { categories, accounts -> categories to accounts }
+    ) { habits, spentToday, spentMonth, recent, categoryAccounts ->
         DashboardUiState(
             date = today,
             habits = habits,
@@ -63,7 +78,8 @@ class DashboardViewModel @Inject constructor(
             spentToday = spentToday,
             spentThisMonth = spentMonth,
             recentExpenses = recent,
-            categories = categories,
+            categories = categoryAccounts.first.filter { it.kind == TransactionType.EXPENSE },
+            accounts = categoryAccounts.second,
             isLoading = false
         )
     } }.stateIn(
@@ -77,25 +93,34 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun addExpense(
+        accountId: Long,
         categoryId: Long,
-        amount: Double,
+        amountMinor: Long,
         note: String,
         timestamp: Long = System.currentTimeMillis()
-    ) = viewModelScope.launch {
-        expenseRepository.addExpense(
-            categoryId = categoryId,
-            amount = amount,
-            note = note,
-            timestamp = timestamp
-        )
+    ) {
+        if (_expenseSave.value.saving) return
+        _expenseSave.value = SaveState(saving = true)
+        writeScope.launch {
+            try {
+                expenseRepository.saveTransaction(TransactionDraft(accountId = accountId, categoryId = categoryId,
+                    amountMinor = amountMinor, note = note, dateTimestamp = timestamp))
+                _expenseSave.value = SaveState(saved = true)
+            } catch (e: CancellationException) { throw e
+            } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: "Couldn't save. Please try again.") }
+        }
     }
 
-    fun addCategory(name: String, colorHex: String) = viewModelScope.launch {
-        expenseRepository.addCategory(name, colorHex)
+    fun addCategory(name: String, colorHex: String) = writeScope.launch {
+        try { expenseRepository.addCategory(name, colorHex)
+        } catch (e: CancellationException) { throw e
+        } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: "Couldn't add category.") }
     }
 
-    fun deleteCategory(id: Long) = viewModelScope.launch {
-        expenseRepository.deleteCategory(id)
+    fun deleteCategory(id: Long) = writeScope.launch {
+        try { expenseRepository.deleteCategory(id)
+        } catch (e: CancellationException) { throw e
+        } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: "Couldn't delete category.") }
     }
 }
 

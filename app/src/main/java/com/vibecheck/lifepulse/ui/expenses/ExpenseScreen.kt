@@ -1,284 +1,123 @@
 package com.vibecheck.lifepulse.ui.expenses
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.vibecheck.lifepulse.R
-import com.vibecheck.lifepulse.core.DateUtils
-import com.vibecheck.lifepulse.domain.model.Expense
-import com.vibecheck.lifepulse.ui.components.AddExpenseSheet
-import com.vibecheck.lifepulse.ui.components.ColorDot
-import com.vibecheck.lifepulse.ui.components.EmptyState
-import com.vibecheck.lifepulse.ui.dashboard.asCurrency
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoCalendarDialog
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoCard
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoColors
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoFab
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoIconButton
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoTypography
-import com.vibecheck.lifepulse.ui.neobrutalism.neoHardShadow
-import java.time.format.TextStyle
-import java.util.Locale
+import com.vibecheck.lifepulse.core.*
+import com.vibecheck.lifepulse.domain.model.*
+import com.vibecheck.lifepulse.ui.neobrutalism.*
+import java.time.format.DateTimeFormatter
+
+private enum class MoneyPage(val label: String) { SPENDING("Spending"), ACCOUNTS("Accounts"), OWED("Money owed") }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpenseScreen(
-    modifier: Modifier = Modifier,
-    viewModel: ExpenseViewModel = hiltViewModel()
-) {
+fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var showSheet by remember { mutableStateOf(false) }
+    val editor by viewModel.editor.collectAsStateWithLifecycle()
+    val accountEditor by viewModel.accountEditor.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+    var pageName by rememberSaveable { mutableStateOf(MoneyPage.SPENDING.name) }
+    val page = MoneyPage.valueOf(pageName)
+    var activityFilter by rememberSaveable { mutableStateOf("All") }
+    var editing by remember { mutableStateOf<Expense?>(null) }
+    var repaying by remember { mutableStateOf<Expense?>(null) }
+    var newType by remember { mutableStateOf(TransactionType.EXPENSE) }
+    var showTransaction by remember { mutableStateOf(false) }
+    var editingAccount by remember { mutableStateOf<Account?>(null) }
+    var showAccount by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
+    var showBreakdown by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
+    var showSettled by rememberSaveable { mutableStateOf(false) }
+    var deleteTarget by remember { mutableStateOf<Expense?>(null) }
+    var currencyTarget by remember { mutableStateOf<String?>(null) }
+    val snackbar = remember { SnackbarHostState() }
+    LaunchedEffect(message) { message?.let { snackbar.showSnackbar(it); viewModel.clearMessage() } }
+    LaunchedEffect(editor.saved) { if (editor.saved) activityFilter = "All" }
+    fun selectPage(next: MoneyPage) { pageName = next.name; viewModel.selectAccount(null) }
+    BackHandler(page != MoneyPage.SPENDING) { selectPage(MoneyPage.SPENDING) }
+    fun openTransaction(type: TransactionType, transaction: Expense? = null, loan: Expense? = null) {
+        newType = type; editing = transaction; repaying = loan
+        viewModel.resetEditor(); showTransaction = true
+    }
+    fun openAccount(account: Account? = null) {
+        editingAccount = account; viewModel.resetAccountEditor(); showAccount = true
+    }
 
-    Scaffold(
-        modifier = modifier,
-        containerColor = NeoColors.Background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.expense_title),
-                        style = NeoTypography.headlineMedium,
-                        color = NeoColors.OnSurface
-                    )
-                },
-                actions = {
-                    Row(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .neoHardShadow(
-                                shape = RoundedCornerShape(10.dp),
-                                shadowColor = NeoColors.Shadow,
-                                offsetX = 3.dp,
-                                offsetY = 3.dp
-                            )
-                            .background(NeoColors.Accent, RoundedCornerShape(10.dp))
-                            .border(width = 2.dp, color = NeoColors.Border, shape = RoundedCornerShape(10.dp))
-                            .clickable { showCalendar = true }
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.CalendarMonth,
-                            contentDescription = stringResource(R.string.expense_pick_month_content_description),
-                            tint = NeoColors.OnSurface,
-                            modifier = Modifier.padding(end = 6.dp)
-                        )
-                        Text(
-                            text = "${state.selectedMonth.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())} ${state.selectedMonth.year}",
-                            style = NeoTypography.labelLarge,
-                            fontWeight = FontWeight.Black,
-                            color = NeoColors.OnSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = NeoColors.Background,
-                    titleContentColor = NeoColors.OnSurface
-                )
-            )
-        },
-        floatingActionButton = {
-            NeoFab(
-                icon = Icons.Default.Add,
-                contentDescription = stringResource(R.string.expense_add_content_description),
-                onClick = { showSheet = true }
-            )
-        }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(NeoColors.Background)
-                .padding(innerPadding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                NeoCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    backgroundColor = NeoColors.Accent,
-                    contentPadding = 20.dp
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                stringResource(R.string.expense_today_label),
-                                style = NeoTypography.labelLarge,
-                                color = NeoColors.OnSurface
-                            )
-                            Text(
-                                state.totalToday.asCurrency(),
-                                style = NeoTypography.headlineMedium,
-                                color = NeoColors.OnSurface
-                            )
-                        }
-                        Column {
-                            Text(
-                                stringResource(R.string.expense_this_month_label),
-                                style = NeoTypography.labelLarge,
-                                color = NeoColors.OnSurface
-                            )
-                            Text(
-                                state.totalSelectedMonth.asCurrency(),
-                                style = NeoTypography.headlineMedium,
-                                color = NeoColors.OnSurface
-                            )
-                        }
-                    }
-                }
+    Scaffold(modifier, containerColor = NeoColors.Background, contentWindowInsets = WindowInsets(0),
+        topBar = { TopAppBar(title = { Text("Your money", style = NeoTypography.headlineMedium) },
+            actions = { NeoButton("Add entry", { openTransaction(if (page == MoneyPage.OWED) TransactionType.LEND else TransactionType.EXPENSE) },
+                Modifier.padding(end = 16.dp), backgroundColor = NeoColors.Coral, contentColor = NeoColors.OnSurface,
+                horizontalPadding = 12.dp, verticalPadding = 8.dp, shadowOffset = 3.dp,
+                leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp)) }) },
+            windowInsets = WindowInsets(0), colors = TopAppBarDefaults.topAppBarColors(containerColor = NeoColors.Background)) },
+        snackbarHost = { SnackbarHost(snackbar) { data ->
+            NeoColumnCard(Modifier.padding(16.dp).fillMaxWidth(), backgroundColor = NeoColors.PastelYellow) {
+                Text(data.visuals.message, style = NeoTypography.bodyMedium)
             }
-
-            item {
-                Text(
-                    stringResource(R.string.expense_recent_transactions),
-                    style = NeoTypography.titleLarge,
-                    color = NeoColors.OnSurface,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
-                )
-            }
-
-            if (state.expensesByDay.isEmpty()) {
-                item {
-                    EmptyState(
-                        stringResource(R.string.expense_empty_title),
-                        stringResource(R.string.expense_empty_subtitle),
-                        imageRes = R.drawable.empty_expense,
-                        imageSize = 350.dp
-                    )
-                }
-            } else {
-                state.expensesByDay.forEach { dayGroup ->
-                    item(key = "header_${dayGroup.date}") {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 4.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = DateUtils.formatTimestamp(dayGroup.date.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(), pattern = "EEE, dd MMM"),
-                                style = NeoTypography.titleMedium,
-                                fontWeight = FontWeight.Black,
-                                color = NeoColors.OnSurface
-                            )
-                            Text(
-                                text = dayGroup.total.asCurrency(),
-                                style = NeoTypography.titleMedium,
-                                fontWeight = FontWeight.Black,
-                                color = NeoColors.OnSurface
-                            )
-                        }
-                    }
-                    items(dayGroup.expenses, key = { it.id }) { expense ->
-                        ExpenseListItem(expense) { viewModel.deleteExpense(expense.id) }
+        } }) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            NeoTextTabs(MoneyPage.entries.map { it.name to it.label }, page.name,
+                { selectPage(MoneyPage.valueOf(it)) }, Modifier.padding(horizontal = 16.dp))
+            key(page) {
+                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    when (page) {
+                        MoneyPage.SPENDING -> spendingSection(state, activityFilter, { activityFilter = it },
+                            { showCalendar = true }, { showBreakdown = true },
+                            viewModel::selectAccount, { openTransaction(it.type, transaction = it) })
+                        MoneyPage.ACCOUNTS -> accountsSection(state, { openAccount(it) },
+                            { showSettings = true },
+                            { openTransaction(it.type, transaction = it) })
+                        MoneyPage.OWED -> owedSection(state, showSettled, { showSettled = it },
+                            { openTransaction(it.type, transaction = it) },
+                            { openTransaction(it.type, loan = it) })
                     }
                 }
             }
         }
     }
-
-    if (showSheet) {
-        AddExpenseSheet(
-            categories = state.categories,
-            onDismiss = { showSheet = false },
-            onSave = { categoryId, amount, note, timestamp ->
-                viewModel.addExpense(categoryId, amount, note, timestamp)
-            },
-            onAddCategory = { name, colorHex -> viewModel.addCategory(name, colorHex) },
-            onDeleteCategory = { category -> viewModel.deleteCategory(category.id) }
-        )
+    if (showTransaction) key(editing?.id, repaying?.id, newType) {
+        TransactionSheet(state.accounts, state.categories, editor, editing, repaying,
+            repaying?.let { Ledger.outstanding(it, state.transactions) } ?: 0,
+            onDismiss = { showTransaction = false }, onSave = viewModel::saveTransaction,
+            onAddCategory = { name, color, type -> viewModel.addCategory(name, color, type) }, onDeleteCategory = { viewModel.deleteCategory(it) },
+            defaultAccountId = state.selectedAccountId, defaultType = newType,
+            onDelete = editing?.let { target -> { showTransaction = false; deleteTarget = target } })
     }
-
-    if (showCalendar) {
-        NeoCalendarDialog(
-            selectedMonth = state.selectedMonth,
-            onMonthSelected = { viewModel.selectMonth(it) },
-            onDismiss = { showCalendar = false }
-        )
+    if (showAccount) key(editingAccount?.id) { AccountSheet(editingAccount, accountEditor, { showAccount = false }, viewModel::saveAccount) }
+    if (showCalendar) NeoCalendarDialog(state.selectedMonth, viewModel::selectMonth, { showCalendar = false })
+    if (showBreakdown) ModalBottomSheet(onDismissRequest = { showBreakdown = false }, containerColor = NeoColors.Background,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            item { Text("Where your money went", style = NeoTypography.headlineMedium) }
+            item { Text("${state.selectedMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))} · ${Money.format(state.spentMinor)} spent", style = NeoTypography.bodyMedium) }
+            items(state.byCategory) { CategorySpendingRow(it, state.spentMinor) }
+            if (state.byCategory.isEmpty()) item { Text("Add an expense to see your breakdown.") }
+        }
     }
+    if (showSettings) ModalBottomSheet(onDismissRequest = { showSettings = false }, containerColor = NeoColors.PaleCyan) {
+        Column(Modifier.navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("Currency", style = NeoTypography.headlineMedium)
+            NeoChoiceField("Used for all accounts", Money.supportedCurrencies.map { it to it }, Money.currencyCode,
+                { if (it != Money.currencyCode) currencyTarget = it })
+            Text("Changing currency changes the labels. Amounts are not converted.", style = NeoTypography.bodyMedium)
+            NeoButton("Done", { showSettings = false }, Modifier.fillMaxWidth())
+        }
+    }
+    deleteTarget?.let { target -> NeoConfirmDialog("Delete entry?", "Delete ${Money.format(target.amountMinor)}? This will update your account balance.",
+        "Delete", { deleteTarget = null }, { viewModel.deleteExpense(target.id); deleteTarget = null }) }
+    currencyTarget?.let { code -> NeoConfirmDialog("Use $code?", "Existing amounts will not be converted.",
+        "Change", { currencyTarget = null }, { viewModel.setCurrency(code); currencyTarget = null }) }
 }
-
-@Composable
-private fun ExpenseListItem(expense: Expense, onDelete: () -> Unit) {
-    NeoCard(
-        modifier = Modifier.fillMaxWidth(),
-        backgroundColor = NeoColors.Surface,
-        shape = RoundedCornerShape(12.dp),
-        borderWidth = 2.dp,
-        shadowOffsetX = 4.dp,
-        shadowOffsetY = 4.dp,
-        contentPadding = 12.dp
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            ColorDot(expense.categoryColorHex, size = 16)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(expense.categoryName, style = NeoTypography.titleMedium, color = NeoColors.OnSurface)
-                Text(
-                    listOfNotNull(
-                        expense.note.takeIf { it.isNotBlank() },
-                        DateUtils.formatTimestamp(expense.dateTimestamp)
-                    ).joinToString(" • "),
-                    style = NeoTypography.bodyMedium,
-                    color = NeoColors.OnSurface.copy(alpha = 0.7f)
-                )
-            }
-            Text(
-                expense.amount.asCurrency(),
-                style = NeoTypography.titleMedium,
-                fontWeight = FontWeight.Black,
-                color = NeoColors.OnSurface
-            )
-            NeoIconButton(
-                icon = Icons.Default.Delete,
-                contentDescription = stringResource(R.string.expense_delete_content_description),
-                onClick = onDelete,
-                backgroundColor = NeoColors.Danger,
-                iconTint = NeoColors.White,
-                size = 30.dp,
-                borderWidth = 1.5.dp,
-                shadowOffset = 2.dp
-            )
-        }
-    }
-}
-

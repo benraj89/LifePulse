@@ -63,6 +63,7 @@ fun DashboardScreen(
     onSeeAllExpenses: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val expenseSave by viewModel.expenseSave.collectAsStateWithLifecycle()
     var showExpenseSheet by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -108,7 +109,7 @@ fun DashboardScreen(
                 ) {
                     NeoButton(
                         text = stringResource(R.string.dashboard_add_expense),
-                        onClick = { showExpenseSheet = true },
+                        onClick = { viewModel.resetExpenseSave(); showExpenseSheet = true },
                         backgroundColor = NeoColors.Primary,
                         leadingIcon = {
                             androidx.compose.material3.Icon(
@@ -181,10 +182,12 @@ fun DashboardScreen(
     if (showExpenseSheet) {
         AddExpenseSheet(
             categories = state.categories,
+            accounts = state.accounts,
             onDismiss = { showExpenseSheet = false },
             onSave = viewModel::addExpense,
             onAddCategory = { name, colorHex -> viewModel.addCategory(name, colorHex) },
-            onDeleteCategory = { category -> viewModel.deleteCategory(category.id) }
+            onDeleteCategory = { category -> viewModel.deleteCategory(category.id) },
+            saving = expenseSave.saving, saveError = expenseSave.error, saveSucceeded = expenseSave.saved
         )
     }
 }
@@ -356,7 +359,7 @@ private fun ExpenseRow(expense: Expense) {
 }
 
 fun Double.asCurrency(): String =
-    NumberFormat.getCurrencyInstance(Locale.getDefault()).format(this)
+    com.vibecheck.lifepulse.core.Money.format(com.vibecheck.lifepulse.core.Money.fromLegacy(this))
 
 @Preview(showBackground = true)
 @Composable

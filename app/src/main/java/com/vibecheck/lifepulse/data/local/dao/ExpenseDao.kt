@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import com.vibecheck.lifepulse.data.local.entity.ExpenseEntity
 import com.vibecheck.lifepulse.data.local.relation.CategoryTotal
 import com.vibecheck.lifepulse.data.local.relation.ExpenseWithCategory
@@ -13,11 +14,27 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ExpenseDao {
 
+    @Query("""SELECT e.*, IFNULL(c.name, e.type) AS categoryName,
+        IFNULL(c.colorHex, '#42A5F5') AS categoryColorHex
+        FROM expenses e LEFT JOIN categories c ON c.id = e.categoryId
+        ORDER BY e.dateTimestamp DESC, e.id DESC""")
+    fun observeAllTransactions(): Flow<List<ExpenseWithCategory>>
+
+    @Query("SELECT * FROM expenses WHERE id = :id")
+    suspend fun get(id: Long): ExpenseEntity?
+
+    @Query("SELECT IFNULL(SUM(amountMinor), 0) FROM expenses WHERE loanId = :loanId AND id != :excludingId")
+    suspend fun repaid(loanId: Long, excludingId: Long = 0): Long
+    @Query("SELECT MIN(dateTimestamp) FROM expenses WHERE loanId = :loanId")
+    suspend fun firstRepaymentDate(loanId: Long): Long?
+
+    @Update suspend fun updateExpense(expense: ExpenseEntity): Int
+
     /** Total spend inside an arbitrary range (e.g. start-of-today .. end-of-today). */
     @Query(
         """
-        SELECT IFNULL(SUM(amount), 0.0) FROM expenses 
-        WHERE dateTimestamp BETWEEN :start AND :end
+        SELECT IFNULL(SUM(amountMinor), 0) / 100.0 FROM expenses
+        WHERE type = 'EXPENSE' AND dateTimestamp BETWEEN :start AND :end
         """
     )
     fun observeTotalInRange(start: Long, end: Long): Flow<Double>
@@ -28,7 +45,7 @@ interface ExpenseDao {
         SELECT e.*, c.name AS categoryName, c.colorHex AS categoryColorHex
         FROM expenses e
         INNER JOIN categories c ON c.id = e.categoryId
-        WHERE e.dateTimestamp BETWEEN :start AND :end
+        WHERE e.type = 'EXPENSE' AND e.dateTimestamp BETWEEN :start AND :end
         ORDER BY e.dateTimestamp DESC
         """
     )
@@ -40,6 +57,7 @@ interface ExpenseDao {
         SELECT e.*, c.name AS categoryName, c.colorHex AS categoryColorHex
         FROM expenses e
         INNER JOIN categories c ON c.id = e.categoryId
+        WHERE e.type = 'EXPENSE'
         ORDER BY e.dateTimestamp DESC
         LIMIT :limit
         """
@@ -49,10 +67,10 @@ interface ExpenseDao {
     @Query(
         """
         SELECT c.id AS categoryId, c.name AS categoryName, c.colorHex AS colorHex,
-               SUM(e.amount) AS total
+               SUM(e.amountMinor) / 100.0 AS total
         FROM expenses e
         INNER JOIN categories c ON c.id = e.categoryId
-        WHERE e.dateTimestamp BETWEEN :start AND :end
+        WHERE e.type = 'EXPENSE' AND e.dateTimestamp BETWEEN :start AND :end
         GROUP BY c.id
         ORDER BY total DESC
         """

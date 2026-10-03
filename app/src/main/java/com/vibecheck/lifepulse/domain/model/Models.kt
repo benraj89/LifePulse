@@ -34,18 +34,26 @@ data class Category(
     val id: Long,
     val name: String,
     val colorHex: String,
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val kind: TransactionType = TransactionType.EXPENSE
 )
 
 data class Expense(
     val id: Long,
-    val categoryId: Long,
+    val categoryId: Long?,
     val categoryName: String,
     val categoryColorHex: String,
-    val amount: Double,
+    val amountMinor: Long,
     val dateTimestamp: Long,
-    val note: String
-)
+    val note: String,
+    val type: TransactionType = TransactionType.EXPENSE,
+    val accountId: Long = 1,
+    val toAccountId: Long? = null,
+    val person: String = "",
+    val loanId: Long? = null
+) {
+    val amount: Double get() = amountMinor / 100.0
+}
 
 data class CategorySpending(
     val categoryId: Long,

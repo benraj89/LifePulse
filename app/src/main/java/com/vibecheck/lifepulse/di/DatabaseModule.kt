@@ -9,6 +9,7 @@ import com.vibecheck.lifepulse.data.local.LifePulseDatabase
 import com.vibecheck.lifepulse.data.local.dao.CategoryDao
 import com.vibecheck.lifepulse.data.local.dao.ExpenseDao
 import com.vibecheck.lifepulse.data.local.dao.HabitDao
+import com.vibecheck.lifepulse.data.local.dao.AccountDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,6 +20,31 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
+
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS accounts (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name TEXT NOT NULL, openingMinor INTEGER NOT NULL)")
+            db.execSQL("INSERT INTO accounts (id, name, openingMinor) VALUES (1, 'Cash', 0)")
+            db.execSQL("ALTER TABLE categories ADD COLUMN kind TEXT NOT NULL DEFAULT 'EXPENSE'")
+            db.execSQL("""CREATE TABLE expenses_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, categoryId INTEGER,
+                amountMinor INTEGER NOT NULL, dateTimestamp INTEGER NOT NULL, note TEXT NOT NULL,
+                type TEXT NOT NULL, accountId INTEGER NOT NULL, toAccountId INTEGER,
+                person TEXT NOT NULL, loanId INTEGER,
+                FOREIGN KEY(categoryId) REFERENCES categories(id) ON UPDATE NO ACTION ON DELETE RESTRICT,
+                FOREIGN KEY(accountId) REFERENCES accounts(id) ON UPDATE NO ACTION ON DELETE RESTRICT,
+                FOREIGN KEY(toAccountId) REFERENCES accounts(id) ON UPDATE NO ACTION ON DELETE RESTRICT,
+                FOREIGN KEY(loanId) REFERENCES expenses(id) ON UPDATE NO ACTION ON DELETE RESTRICT
+            )""")
+            db.execSQL("""INSERT INTO expenses_new (id, categoryId, amountMinor, dateTimestamp, note, type, accountId, toAccountId, person, loanId)
+                SELECT id, categoryId, CAST(ROUND(amount * 100) AS INTEGER), dateTimestamp, note, 'EXPENSE', 1, NULL, '', NULL FROM expenses""")
+            db.execSQL("DROP TABLE expenses")
+            db.execSQL("ALTER TABLE expenses_new RENAME TO expenses")
+            listOf("categoryId", "dateTimestamp", "accountId", "toAccountId", "loanId").forEach {
+                db.execSQL("CREATE INDEX index_expenses_$it ON expenses ($it)")
+            }
+        }
+    }
 
     /**
      * Adds the `isDefault` column introduced for category deletion support. Uses a real
@@ -70,6 +96,7 @@ object DatabaseModule {
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
+                    db.execSQL("INSERT OR IGNORE INTO accounts (id, name, openingMinor) VALUES (1, 'Cash', 0)")
                     // Seed a few default expense categories on first launch. These are flagged
                     // isDefault = 1 so the UI can prevent the user from deleting them.
                     DefaultCategories.ALL.forEach { (name, color) ->
@@ -80,8 +107,7 @@ object DatabaseModule {
                     }
                 }
             })
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
-            .fallbackToDestructiveMigration()
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
 
     @Provides
@@ -92,5 +118,8 @@ object DatabaseModule {
 
     @Provides
     fun provideExpenseDao(db: LifePulseDatabase): ExpenseDao = db.expenseDao()
+
+    @Provides
+    fun provideAccountDao(db: LifePulseDatabase): AccountDao = db.accountDao()
 }
 

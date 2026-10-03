@@ -3,9 +3,16 @@ package com.vibecheck.lifepulse.domain.repository
 import com.vibecheck.lifepulse.domain.model.Category
 import com.vibecheck.lifepulse.domain.model.CategorySpending
 import com.vibecheck.lifepulse.domain.model.Expense
+import com.vibecheck.lifepulse.domain.model.Account
+import com.vibecheck.lifepulse.domain.model.TransactionDraft
+import com.vibecheck.lifepulse.domain.model.TransactionType
 import kotlinx.coroutines.flow.Flow
 
 interface ExpenseRepository {
+    fun observeTransactions(): Flow<List<Expense>>
+    fun observeAccounts(): Flow<List<Account>>
+    suspend fun saveTransaction(draft: TransactionDraft): Long
+    suspend fun saveAccount(id: Long, name: String, openingMinor: Long): Long
 
     fun observeTotalInRange(start: Long, end: Long): Flow<Double>
 
@@ -17,7 +24,7 @@ interface ExpenseRepository {
 
     fun observeCategories(): Flow<List<Category>>
 
-    suspend fun addCategory(name: String, colorHex: String): Long
+    suspend fun addCategory(name: String, colorHex: String, kind: TransactionType = TransactionType.EXPENSE): Long
 
     suspend fun deleteCategory(id: Long)
 
@@ -27,8 +34,6 @@ interface ExpenseRepository {
      * (besides re-flagging isDefault), missing ones are inserted.
      */
     suspend fun ensureDefaultCategories()
-
-    suspend fun addExpense(categoryId: Long, amount: Double, note: String, timestamp: Long): Long
 
     suspend fun deleteExpense(id: Long)
 }

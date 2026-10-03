@@ -61,6 +61,20 @@ fun NeoCard(
     }
 }
 
+/** A card with vertical content and consistent spacing. */
+@Composable
+fun NeoColumnCard(
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = NeoColors.Surface,
+    shape: Shape = RoundedCornerShape(12.dp),
+    contentPadding: Dp = 16.dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    NeoCard(modifier = modifier, backgroundColor = backgroundColor, shape = shape, contentPadding = contentPadding) {
+        androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+    }
+}
+
 /**
  * A dialog-scale stacked-poster effect: a heavy backing slab peeks from behind the
  * main panel, keeping the look bold, architectural, and high-contrast.

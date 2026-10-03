@@ -31,6 +31,13 @@ class LifePulseApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        val currency = getSharedPreferences("finance_settings", MODE_PRIVATE).getString("currency", null)
+        if (currency in com.vibecheck.lifepulse.core.Money.supportedCurrencies) {
+            com.vibecheck.lifepulse.core.Money.currencyCode = currency!!
+        } else {
+            getSharedPreferences("finance_settings", MODE_PRIVATE).edit()
+                .putString("currency", com.vibecheck.lifepulse.core.Money.currencyCode).apply()
+        }
 
         // The channel must exist before the very first notification is posted, and creating it
         // eagerly also makes the app's notification settings visible to the user right away.
