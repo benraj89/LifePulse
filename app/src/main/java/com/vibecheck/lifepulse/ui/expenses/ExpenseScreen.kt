@@ -3,7 +3,6 @@ package com.vibecheck.lifepulse.ui.expenses
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -16,7 +15,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vibecheck.lifepulse.core.*
 import com.vibecheck.lifepulse.domain.model.*
 import com.vibecheck.lifepulse.ui.neobrutalism.*
-import java.time.format.DateTimeFormatter
 
 private enum class MoneyPage(val label: String) { SPENDING("Spending"), ACCOUNTS("Accounts"), OWED("Money owed") }
 
@@ -37,7 +35,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     var editingAccount by remember { mutableStateOf<Account?>(null) }
     var showAccount by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
-    var showBreakdown by remember { mutableStateOf(false) }
+    var showInsights by rememberSaveable { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var showSettled by rememberSaveable { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<Expense?>(null) }
@@ -53,6 +51,11 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     }
     fun openAccount(account: Account? = null) {
         editingAccount = account; viewModel.resetAccountEditor(); showAccount = true
+    }
+
+    if (showInsights) {
+        ExpenseInsightsScreen(state, viewModel::selectMonth, viewModel::selectAccount, { showInsights = false })
+        return
     }
 
     Scaffold(modifier, containerColor = NeoColors.Background, contentWindowInsets = WindowInsets(0),
@@ -75,7 +78,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
                     verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     when (page) {
                         MoneyPage.SPENDING -> spendingSection(state, activityFilter, { activityFilter = it },
-                            { showCalendar = true }, { showBreakdown = true },
+                            { showCalendar = true }, { showInsights = true },
                             viewModel::selectAccount, { openTransaction(it.type, transaction = it) })
                         MoneyPage.ACCOUNTS -> accountsSection(state, { openAccount(it) },
                             { showSettings = true },
@@ -98,15 +101,6 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     }
     if (showAccount) key(editingAccount?.id) { AccountSheet(editingAccount, accountEditor, { showAccount = false }, viewModel::saveAccount) }
     if (showCalendar) NeoCalendarDialog(state.selectedMonth, viewModel::selectMonth, { showCalendar = false })
-    if (showBreakdown) ModalBottomSheet(onDismissRequest = { showBreakdown = false }, containerColor = NeoColors.Background,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item { Text("Where your money went", style = NeoTypography.headlineMedium) }
-            item { Text("${state.selectedMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))} · ${Money.format(state.spentMinor)} spent", style = NeoTypography.bodyMedium) }
-            items(state.byCategory) { CategorySpendingRow(it, state.spentMinor) }
-            if (state.byCategory.isEmpty()) item { Text("Add an expense to see your breakdown.") }
-        }
-    }
     if (showSettings) ModalBottomSheet(onDismissRequest = { showSettings = false }, containerColor = NeoColors.PaleCyan) {
         Column(Modifier.navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text("Currency", style = NeoTypography.headlineMedium)

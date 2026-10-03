@@ -26,7 +26,6 @@ import androidx.compose.ui.graphics.Color
 import com.vibecheck.lifepulse.core.*
 import com.vibecheck.lifepulse.domain.model.*
 import com.vibecheck.lifepulse.ui.components.ColorDot
-import com.vibecheck.lifepulse.ui.components.toComposeColor
 import com.vibecheck.lifepulse.ui.neobrutalism.*
 import java.time.format.DateTimeFormatter
 
@@ -84,7 +83,7 @@ private fun SpendingSummary(state: ExpenseUiState, onCalendar: () -> Unit, onBre
             Row(Modifier.fillMaxWidth().background(NeoColors.Surface).clickable(onClick = onBreakdown)
                 .heightIn(min = 48.dp).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("See category breakdown", style = NeoTypography.labelLarge, fontWeight = FontWeight.Black, color = NeoColors.OnSurface,
+                Text("Spending insights", style = NeoTypography.labelLarge, fontWeight = FontWeight.Black, color = NeoColors.OnSurface,
                     modifier = Modifier.weight(1f))
                 Text("→", style = NeoTypography.titleLarge, fontWeight = FontWeight.Black, color = NeoColors.OnSurface)
             }
@@ -275,20 +274,6 @@ private fun FinanceEmpty(title: String, hint: String) {
     NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.Surface, contentPadding = 12.dp) {
         Text(title, style = NeoTypography.titleMedium)
         Text(hint, style = NeoTypography.bodyMedium)
-    }
-}
-
-@Composable
-internal fun CategorySpendingRow(category: CategoryBreakdown, total: Long) {
-    val fraction = if (total > 0) (category.totalMinor.toDouble() / total).toFloat().coerceIn(0f, 1f) else 0f
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(category.name, style = NeoTypography.titleMedium, modifier = Modifier.weight(1f))
-            Text("${Money.format(category.totalMinor)} · ${(fraction * 100).toInt()}%", style = NeoTypography.bodyMedium)
-        }
-        Box(Modifier.fillMaxWidth().height(12.dp).background(NeoColors.Concrete).border(2.dp, NeoColors.Border)) {
-            if (fraction > 0) Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().background(category.colorHex.toComposeColor()))
-        }
     }
 }
 

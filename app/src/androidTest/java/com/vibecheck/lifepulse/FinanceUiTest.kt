@@ -43,6 +43,14 @@ class FinanceUiTest {
     }
     @After fun cleanup() { store.clear(); database.close() }
 
+    @Test fun spendingInsightsOpensAndReturnsToEntries() {
+        compose.onNodeWithText("Spending insights").performClick()
+        compose.waitUntil(5000) { compose.onAllNodesWithText("01 / THE BIG PICTURE").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("Back to spending").performClick()
+        compose.onNodeWithText("Your entries").assertExists()
+        compose.onNodeWithTag("transaction_$expenseId").assertExists()
+    }
+
     @Test fun addAccountThroughForm() {
         compose.onNodeWithText("Accounts").performClick()
         compose.onNodeWithContentDescription("Add account").performClick()

@@ -17,7 +17,6 @@ import java.time.ZoneId
 import javax.inject.Inject
 
 data class ExpenseDayGroup(val date: LocalDate, val expenses: List<Expense>, val total: Long)
-data class CategoryBreakdown(val name: String, val colorHex: String, val totalMinor: Long)
 data class SaveState(val saving: Boolean = false, val error: String? = null, val saved: Boolean = false)
 
 data class ExpenseUiState(
@@ -31,7 +30,6 @@ data class ExpenseUiState(
     val totalToday: Long = 0,
     val spentMinor: Long = 0,
     val incomeMinor: Long = 0,
-    val byCategory: List<CategoryBreakdown> = emptyList(),
     val outstandingLoans: List<Expense> = emptyList(),
     val isLoading: Boolean = true
 )
@@ -72,9 +70,6 @@ class ExpenseViewModel @Inject constructor(
                 totalToday = filtered.filter { date(it) == today && it.type == TransactionType.EXPENSE }.sumOf { it.amountMinor },
                 spentMinor = expenses.sumOf { it.amountMinor },
                 incomeMinor = monthTransactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amountMinor },
-                byCategory = expenses.groupBy { it.categoryId }.values.map { group ->
-                    CategoryBreakdown(group.first().categoryName, group.first().categoryColorHex, group.sumOf { it.amountMinor })
-                }.sortedByDescending { it.totalMinor },
                 outstandingLoans = currentTransactions.filter {
                     it.type.isLoan && (accountId == null || it.accountId == accountId) && Ledger.outstanding(it, currentTransactions) > 0
                 },
