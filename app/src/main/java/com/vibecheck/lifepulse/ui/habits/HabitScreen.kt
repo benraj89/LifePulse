@@ -93,9 +93,9 @@ fun HabitScreen(
         } else {
             val grouped = state.habits.groupBy { it.frequency }
             val sections = listOf(
-                HabitSection(HabitFrequency.DAILY, stringResource(R.string.frequency_daily), NeoColors.Lime, "D", -1.5f),
-                HabitSection(HabitFrequency.WEEKLY, stringResource(R.string.frequency_weekly), NeoColors.Cyan, "W", 1.5f),
-                HabitSection(HabitFrequency.MONTHLY, stringResource(R.string.frequency_monthly), NeoColors.Orange, "M", -1.5f)
+                HabitSection(HabitFrequency.DAILY, stringResource(R.string.frequency_daily), NeoColors.Lime, stringResource(R.string.frequency_daily_code), -1.5f),
+                HabitSection(HabitFrequency.WEEKLY, stringResource(R.string.frequency_weekly), NeoColors.Cyan, stringResource(R.string.frequency_weekly_code), 1.5f),
+                HabitSection(HabitFrequency.MONTHLY, stringResource(R.string.frequency_monthly), NeoColors.Orange, stringResource(R.string.frequency_monthly_code), -1.5f)
             ).filter { !grouped[it.frequency].isNullOrEmpty() }
 
             LazyColumn(

@@ -92,4 +92,238 @@
     <string name="this_month">%1$s this month</string>
     <string name="today_s_total_spent">Today\'s Total Spent</string>
     <string name="today_s_habit_progress">Today\'s Habit Progress</string>
+
+    <!-- Shared actions and controls -->
+    <string name="action_clear">Clear</string>
+    <string name="action_change">Change</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_done">Done</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_saving">Saving…</string>
+    <string name="choice_placeholder">Choose…</string>
+    <string name="confirmation_tape">PLEASE CHECK</string>
+    <string name="choice_placeholder_short">Choose</string>
+    <string name="action_increase">Increase</string>
+    <string name="action_decrease">Decrease</string>
+    <string name="switch_on">ON</string>
+    <string name="switch_off">OFF</string>
+
+    <!-- Finance screens -->
+    <string name="finance_your_entries">Your entries</string>
+    <string name="finance_edit_hint">Tap an entry to edit</string>
+    <string name="finance_loading_entries">Loading your entries…</string>
+    <string name="finance_empty_title">A fresh start</string>
+    <string name="finance_empty_hint">No entries here yet. Tap Add entry to get started.</string>
+    <string name="finance_monthly_spending">MONTHLY SPENDING</string>
+    <string name="finance_spent_today">SPENT TODAY</string>
+    <string name="finance_month_income">MONTH\'S INCOME</string>
+    <string name="finance_category_breakdown">See category breakdown</string>
+    <string name="finance_total_balance">YOUR TOTAL BALANCE</string>
+    <string name="finance_balance_hint">Based on the entries you\'ve recorded</string>
+    <string name="finance_your_accounts">Your accounts</string>
+    <string name="finance_transfers_empty">Transfers will appear here. They don\'t count as spending.</string>
+    <string name="finance_owed_heading">MONEY OWED</string>
+    <string name="finance_people_owe_you">PEOPLE OWE YOU</string>
+    <string name="finance_you_owe_people">YOU OWE PEOPLE</string>
+    <string name="finance_show_repaid">Show repaid loans</string>
+    <string name="finance_owed_empty_title">All clear</string>
+    <string name="finance_owed_empty_hint">Record money you lend or borrow, then track repayments here.</string>
+    <string name="finance_filter">Filter</string>
+    <string name="finance_entry_type">ENTRY TYPE</string>
+    <string name="finance_account_heading">ACCOUNT</string>
+    <string name="finance_all_entries">All entries</string>
+    <string name="finance_all_accounts">All accounts</string>
+    <string name="finance_title">Your money</string>
+    <string name="finance_breakdown_title">Where your money went</string>
+    <string name="finance_breakdown_empty">Add an expense to see your breakdown.</string>
+    <string name="finance_spending_tab">Spending</string>
+    <string name="finance_accounts_tab">Accounts</string>
+    <string name="finance_owed_tab">Money owed</string>
+    <string name="finance_breakdown_summary">%1$s · %2$s spent</string>
+    <string name="finance_category_amount_percent">%1$s · %2$d%%</string>
+    <string name="finance_transfers">Transfers</string>
+
+    <!-- Transactions -->
+    <string name="transaction_add">Add entry</string>
+    <string name="transaction_delete_title">Delete entry?</string>
+    <string name="transaction_transfer_money">Transfer money</string>
+    <string name="transaction_lend_money">Lend money</string>
+    <string name="transaction_borrow_money">Borrow money</string>
+    <string name="transaction_close">Close entry</string>
+    <string name="transaction_from_account">From account</string>
+    <string name="transaction_receive_into">Receive into</string>
+    <string name="transaction_paid_with">Paid with</string>
+    <string name="transaction_to_account">To account</string>
+    <string name="transaction_transfer_hint">Transfers don\'t count as spending or income.</string>
+    <string name="transaction_second_account_hint">Add a second account in Accounts before recording a transfer.</string>
+    <string name="transaction_pay_from">Pay from</string>
+    <string name="transaction_type_expense">Expense</string>
+    <string name="transaction_type_income">Income</string>
+    <string name="transaction_type_transfer">Transfer</string>
+    <string name="transaction_type_lend">Lend</string>
+    <string name="transaction_type_borrow">Borrow</string>
+    <string name="transaction_type_repayment_received">Repayment received</string>
+    <string name="transaction_type_repayment_paid">Repayment paid</string>
+    <string name="transaction_edit_format">Edit %1$s</string>
+    <string name="transaction_save_format">Save %1$s</string>
+    <string name="transaction_delete_format">Delete %1$s</string>
+    <string name="transaction_amount_currency">Amount (%1$s)</string>
+    <string name="amount_placeholder">0.00</string>
+    <string name="transaction_delete_message">Delete %1$s? This will update your account balance.</string>
+    <string name="transaction_transfer_accounts">%1$s → %2$s</string>
+    <string name="transaction_saved">Transaction saved</string>
+    <string name="transaction_updated">Transaction updated</string>
+    <string name="transaction_deleted">Transaction deleted</string>
+
+    <!-- Accounts -->
+    <string name="account_add">Add account</string>
+    <string name="account_edit">Edit account</string>
+    <string name="account_label">Account</string>
+    <string name="account_name_hint">Use a name such as Cash, Bank, or Savings.</string>
+    <string name="account_name">Account name</string>
+    <string name="account_opening_hint">Balance before the transactions you\'ve recorded here. A negative balance is allowed.</string>
+    <string name="account_save">Save account</string>
+    <string name="account_opening_currency">Opening balance (%1$s)</string>
+    <string name="account_saved">Account saved</string>
+
+    <!-- Loans and repayments -->
+    <string name="loan_status_repaid">REPAID</string>
+    <string name="loan_status_lent">LENT</string>
+    <string name="loan_status_borrowed">BORROWED</string>
+    <string name="loan_fully_repaid">Fully repaid</string>
+    <string name="repayment_record">Record repayment</string>
+    <string name="repayment_hide">Hide repayments</string>
+    <string name="loan_lent">Lent</string>
+    <string name="loan_borrowed">Borrowed</string>
+    <string name="loan_lend_person">Who are you lending to?</string>
+    <string name="loan_borrow_person">Who are you borrowing from?</string>
+    <string name="loan_person_name">Person\'s name</string>
+    <string name="loan_tracking_hint">Track repayments in Money owed. This won\'t count as income or spending.</string>
+    <string name="repayment_save">Save repayment</string>
+    <string name="repayment_person_format">%1$s · %2$s</string>
+    <string name="repayment_outstanding_hint">Outstanding: %1$s. You can record a partial repayment.</string>
+    <string name="loan_owes_you_format">Owes you %1$s</string>
+    <string name="loan_you_owe_format">You owe %1$s</string>
+    <string name="loan_lent_detail">%1$s lent · %2$s</string>
+    <string name="loan_borrowed_detail">%1$s borrowed · %2$s</string>
+    <string name="repayment_count_format">Repayments (%1$d)</string>
+    <string name="repayment_detail_format">%1$s repaid · %2$s · Edit</string>
+
+    <!-- Currency settings -->
+    <string name="currency_title">Currency</string>
+    <string name="currency_all_accounts">Used for all accounts</string>
+    <string name="currency_change_hint">Changing currency changes the labels. Amounts are not converted.</string>
+    <string name="currency_existing_amounts_hint">Existing amounts will not be converted.</string>
+    <string name="currency_confirm_title">Use %1$s?</string>
+    <string name="currency_current_format">Currency · %1$s</string>
+    <string name="currency_changed_message">Currency set to %1$s. Existing amounts are not converted.</string>
+
+    <!-- Categories -->
+    <string name="category_manage_action">Manage categories…</string>
+    <string name="category_done_managing">Done managing</string>
+
+    <!-- Validation and error messages -->
+    <string name="error_future_date">Choose today or an earlier date.</string>
+    <string name="error_save_retry">Couldn\'t save. Please try again.</string>
+    <string name="error_save_account">Couldn\'t save account.</string>
+    <string name="error_add_category">Couldn\'t add category.</string>
+    <string name="error_delete_category">Couldn\'t delete category.</string>
+    <string name="error_delete_transaction">Couldn\'t delete transaction.</string>
+    <string name="error_account_name_required">Enter an account name.</string>
+    <string name="error_account_name_length">Use an account name under 50 characters.</string>
+    <string name="error_account_missing">This account no longer exists.</string>
+    <string name="error_amount_invalid">Enter a valid amount greater than zero.</string>
+    <string name="error_account_required">Choose an account.</string>
+    <string name="error_transaction_missing">This transaction no longer exists.</string>
+    <string name="error_transfer_accounts">Choose two different accounts.</string>
+    <string name="error_category_invalid">Choose a valid category.</string>
+    <string name="error_person_required">Enter the person\'s name.</string>
+    <string name="error_loan_type_account_locked">A loan with repayments must keep its type and original account.</string>
+    <string name="error_loan_amount_below_repayments">Amount cannot be below repayments already recorded.</string>
+    <string name="error_loan_date_after_repayment">The loan date must be on or before its first repayment.</string>
+    <string name="error_repayment_loan_required">Choose the original lending or borrowing record.</string>
+    <string name="error_repayment_date_before_loan">Repayment date must be on or after the loan date.</string>
+    <string name="error_repayment_exceeds_outstanding">Repayment is higher than the outstanding amount.</string>
+    <string name="error_category_name_required">Enter a category name.</string>
+    <string name="error_category_type">Categories are for income and expenses.</string>
+    <string name="error_category_name_duplicate">That category name already exists. Choose a different name.</string>
+    <string name="error_category_default_delete">Built-in categories cannot be deleted.</string>
+    <string name="error_loan_has_repayments">Delete the linked repayments before deleting this loan.</string>
+
+    <!-- Dashboard and habit labels -->
+    <string name="habit_dialog_tape">NEW HABIT</string>
+    <string name="habit_title_label">Title</string>
+    <string name="dashboard_habit_completed_format">%1$d/%2$d Completed</string>
+    <string name="habit_reminder_time_format">TIME\u0020\u0020%1$s</string>
+    <string name="habit_add_action">ADD HABIT</string>
+    <string name="habit_streak_badge">🔥%1$d</string>
+    <string name="ordinal_other">%1$dth</string>
+    <string name="ordinal_first">%1$dst</string>
+    <string name="ordinal_second">%1$dnd</string>
+    <string name="ordinal_third">%1$drd</string>
+    <string name="habit_reminder_daily_format">⏰ %1$s daily</string>
+    <string name="habit_reminder_day_time_format">⏰ %1$s @ %2$s</string>
+    <string name="frequency_daily_code">D</string>
+    <string name="frequency_weekly_code">W</string>
+    <string name="frequency_monthly_code">M</string>
+
+    <!-- Calendar and time controls -->
+    <string name="calendar_previous_year">Previous year</string>
+    <string name="calendar_next_year">Next year</string>
+    <string name="calendar_previous_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="time_picker_tape">SET TIME</string>
+    <string name="time_am">AM</string>
+    <string name="time_pm">PM</string>
+    <string name="time_12_hour_format">%1$d:%2$02d %3$s</string>
+
+    <!-- Component showcase -->
+    <string name="showcase_all">All</string>
+    <string name="showcase_health">Health</string>
+    <string name="showcase_finance">Finance</string>
+    <string name="showcase_focus">Focus</string>
+    <string name="showcase_morning_run">Morning Run</string>
+    <string name="showcase_grocery_budget">Grocery Budget</string>
+    <string name="showcase_read_pages">Read 20 Pages</string>
+    <string name="showcase_meditate">Meditate</string>
+    <string name="showcase_habits_title">Today\'s Habits</string>
+    <string name="showcase_search_hint">Search habits...</string>
+    <string name="showcase_complete_hint">Tap to mark as complete</string>
+    <string name="showcase_add_habit">Add Habit</string>
+
+    <string-array name="calendar_weekday_labels">
+        <item>Mo</item>
+        <item>Tu</item>
+        <item>We</item>
+        <item>Th</item>
+        <item>Fr</item>
+        <item>Sa</item>
+        <item>Su</item>
+    </string-array>
+    <string name="backup_menu_title">Backup &amp; export</string>
+    <string name="backup_create_title">Your financial safety net</string>
+    <string name="backup_create_hint">Save all accounts, categories, contacts and transactions, including transfers, loans and repayments.</string>
+    <string name="backup_create_button">Save backup (.mbak)</string>
+    <string name="backup_restore_title">Restore a backup</string>
+    <string name="backup_restore_hint">Bring your finances back from a LifePulse .mbak file. The file is checked before any data is replaced.</string>
+    <string name="backup_restore_button">Open backup (.mbak)</string>
+    <string name="backup_csv_title">Take it to a spreadsheet</string>
+    <string name="backup_csv_hint">Export every transaction to CSV with clear dates in UTC. CSV files are for reporting and cannot be restored.</string>
+    <string name="backup_csv_button">Export spreadsheet (.csv)</string>
+    <string name="backup_privacy_hint">Files contain readable financial data. Save them somewhere you trust.</string>
+    <string name="backup_restore_confirm_title">Replace financial data?</string>
+    <string name="backup_restore_confirm_message">This replaces all current accounts, categories, contacts and transactions with the selected backup. Save a backup first if you want to keep your current data. Habits and your currency setting stay as they are.</string>
+    <string name="backup_restore_confirm_button">Replace &amp; restore</string>
+    <string name="backup_progress_save">Creating your backup…</string>
+    <string name="backup_progress_restore">Checking and restoring…</string>
+    <string name="backup_progress_csv">Exporting transactions…</string>
+    <string name="backup_progress_hint">Please keep LifePulse open until this finishes.</string>
+    <string name="backup_saved">Backup saved.</string>
+    <string name="backup_restored">Backup restored. Your financial data is ready.</string>
+    <string name="backup_csv_saved">CSV exported. Dates are in UTC.</string>
+    <string name="backup_picker_error">Could not open the file picker. Please try again.</string>
+    <string name="backup_invalid">Backup rejected: %1$s Your financial data was not replaced.</string>
+    <string name="backup_invalid_fallback">Invalid backup file.</string>
+    <string name="backup_restore_error">Restore failed. Your financial data was not replaced. Check the file and available storage, then try again.</string>
+    <string name="backup_write_error">Could not finish saving. Check available storage and try again. Any incomplete file can be deleted.</string>
 </resources>

@@ -1,33 +1,37 @@
 package com.vibecheck.lifepulse.data.repository
 
-import com.vibecheck.lifepulse.data.local.dao.CategoryDao
-import com.vibecheck.lifepulse.data.local.dao.AccountDao
-import com.vibecheck.lifepulse.data.local.LifePulseDatabase
-import com.vibecheck.lifepulse.data.local.entity.AccountEntity
-import com.vibecheck.lifepulse.domain.model.Account
-import com.vibecheck.lifepulse.domain.model.TransactionDraft
-import com.vibecheck.lifepulse.domain.model.TransactionType
+import android.content.Context
 import androidx.room.withTransaction
-import com.vibecheck.lifepulse.data.local.dao.ExpenseDao
+import com.vibecheck.lifepulse.R
 import com.vibecheck.lifepulse.data.local.DefaultCategories
+import com.vibecheck.lifepulse.data.local.LifePulseDatabase
+import com.vibecheck.lifepulse.data.local.dao.AccountDao
+import com.vibecheck.lifepulse.data.local.dao.CategoryDao
+import com.vibecheck.lifepulse.data.local.dao.ExpenseDao
+import com.vibecheck.lifepulse.data.local.entity.AccountEntity
 import com.vibecheck.lifepulse.data.local.entity.CategoryEntity
 import com.vibecheck.lifepulse.data.local.entity.ExpenseEntity
 import com.vibecheck.lifepulse.data.local.relation.ExpenseWithCategory
+import com.vibecheck.lifepulse.domain.model.Account
 import com.vibecheck.lifepulse.domain.model.Category
 import com.vibecheck.lifepulse.domain.model.CategorySpending
 import com.vibecheck.lifepulse.domain.model.Expense
+import com.vibecheck.lifepulse.domain.model.TransactionDraft
+import com.vibecheck.lifepulse.domain.model.TransactionType
 import com.vibecheck.lifepulse.domain.repository.ExpenseRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @Singleton
 class ExpenseRepositoryImpl @Inject constructor(
     private val expenseDao: ExpenseDao,
     private val categoryDao: CategoryDao,
     private val accountDao: AccountDao,
-    private val database: LifePulseDatabase
+    private val database: LifePulseDatabase,
+    @ApplicationContext private val context: Context
 ) : ExpenseRepository {
 
     override fun observeTransactions(): Flow<List<Expense>> =
@@ -38,47 +42,47 @@ class ExpenseRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveAccount(id: Long, name: String, openingMinor: Long): Long {
-        require(name.isNotBlank()) { "Enter an account name." }
-        require(name.trim().length <= 50) { "Use an account name under 50 characters." }
+        require(name.isNotBlank()) { context.getString(R.string.error_account_name_required) }
+        require(name.trim().length <= 50) { context.getString(R.string.error_account_name_length) }
         val entity = AccountEntity(id, name.trim(), openingMinor)
         return if (id == 0L) accountDao.insert(entity) else {
-            require(accountDao.get(id) != null) { "This account no longer exists." }
+            require(accountDao.get(id) != null) { context.getString(R.string.error_account_missing) }
             accountDao.update(entity)
             id
         }
     }
 
     override suspend fun saveTransaction(draft: TransactionDraft): Long = database.withTransaction {
-        require(draft.amountMinor in 1..100_000_000_000_000L) { "Enter a valid amount greater than zero." }
-        require(accountDao.get(draft.accountId) != null) { "Choose an account." }
+        require(draft.amountMinor in 1..100_000_000_000_000L) { context.getString(R.string.error_amount_invalid) }
+        require(accountDao.get(draft.accountId) != null) { context.getString(R.string.error_account_required) }
         val existing = if (draft.id != 0L) expenseDao.get(draft.id) else null
-        require(draft.id == 0L || existing != null) { "This transaction no longer exists." }
+        require(draft.id == 0L || existing != null) { context.getString(R.string.error_transaction_missing) }
         if (draft.type == TransactionType.TRANSFER) {
             require(draft.toAccountId != null && draft.toAccountId != draft.accountId &&
-                accountDao.get(draft.toAccountId) != null) { "Choose two different accounts." }
+                accountDao.get(draft.toAccountId) != null) { context.getString(R.string.error_transfer_accounts) }
         }
         if (draft.type.needsCategory) {
             val category = draft.categoryId?.let { categoryDao.getCategory(it) }
             require(category != null && category.kind == draft.type.name &&
-                (!category.isDeleted || existing?.categoryId == category.id)) { "Choose a valid category." }
+                (!category.isDeleted || existing?.categoryId == category.id)) { context.getString(R.string.error_category_invalid) }
         }
-        if (draft.type.isLoan) require(draft.person.isNotBlank()) { "Enter the person's name." }
+        if (draft.type.isLoan) require(draft.person.isNotBlank()) { context.getString(R.string.error_person_required) }
         if (existing != null && expenseDao.repaid(existing.id) > 0) {
             require(existing.type == draft.type.name && existing.accountId == draft.accountId) {
-                "A loan with repayments must keep its type and original account."
+                context.getString(R.string.error_loan_type_account_locked)
             }
-            require(draft.amountMinor >= expenseDao.repaid(existing.id)) { "Amount cannot be below repayments already recorded." }
+            require(draft.amountMinor >= expenseDao.repaid(existing.id)) { context.getString(R.string.error_loan_amount_below_repayments) }
             require(draft.dateTimestamp <= (expenseDao.firstRepaymentDate(existing.id) ?: Long.MAX_VALUE)) {
-                "The loan date must be on or before its first repayment."
+                context.getString(R.string.error_loan_date_after_repayment)
             }
         }
         if (draft.type.isRepayment) {
             val loan = draft.loanId?.let { expenseDao.get(it) }
             val expected = if (draft.type == TransactionType.REPAYMENT_RECEIVED) "LEND" else "BORROW"
-            require(loan != null && loan.type == expected && loan.id != draft.id) { "Choose the original lending or borrowing record." }
-            require(draft.dateTimestamp >= loan.dateTimestamp) { "Repayment date must be on or after the loan date." }
+            require(loan != null && loan.type == expected && loan.id != draft.id) { context.getString(R.string.error_repayment_loan_required) }
+            require(draft.dateTimestamp >= loan.dateTimestamp) { context.getString(R.string.error_repayment_date_before_loan) }
             require(draft.amountMinor <= loan.amountMinor - expenseDao.repaid(loan.id, draft.id)) {
-                "Repayment is higher than the outstanding amount."
+                context.getString(R.string.error_repayment_exceeds_outstanding)
             }
         }
         val entity = ExpenseEntity(
@@ -115,15 +119,15 @@ class ExpenseRepositoryImpl @Inject constructor(
         }
 
     override suspend fun addCategory(name: String, colorHex: String, kind: TransactionType): Long {
-        require(name.isNotBlank()) { "Enter a category name." }
-        require(kind.needsCategory) { "Categories are for income and expenses." }
+        require(name.isNotBlank()) { context.getString(R.string.error_category_name_required) }
+        require(kind.needsCategory) { context.getString(R.string.error_category_type) }
         val id = categoryDao.insertCategory(CategoryEntity(name = name.trim(), colorHex = colorHex, kind = kind.name))
-        require(id != -1L) { "That category name already exists. Choose a different name." }
+        require(id != -1L) { context.getString(R.string.error_category_name_duplicate) }
         return id
     }
 
     override suspend fun deleteCategory(id: Long) {
-        require(categoryDao.getCategory(id)?.isDefault == false) { "Built-in categories cannot be deleted." }
+        require(categoryDao.getCategory(id)?.isDefault == false) { context.getString(R.string.error_category_default_delete) }
         categoryDao.deleteCategory(id)
     }
 
@@ -138,7 +142,7 @@ class ExpenseRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteExpense(id: Long) = database.withTransaction {
-        require(expenseDao.repaid(id) == 0L) { "Delete the linked repayments before deleting this loan." }
+        require(expenseDao.repaid(id) == 0L) { context.getString(R.string.error_loan_has_repayments) }
         expenseDao.deleteExpense(id)
     }
 }

@@ -30,7 +30,7 @@ class FinanceUiTest {
     @Before fun setup() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         database = Room.inMemoryDatabaseBuilder(context, LifePulseDatabase::class.java).build()
-        repository = ExpenseRepositoryImpl(database.expenseDao(), database.categoryDao(), database.accountDao(), database)
+        repository = ExpenseRepositoryImpl(database.expenseDao(), database.categoryDao(), database.accountDao(), database, context)
         database.accountDao().insert(AccountEntity(1, "Cash", 10000))
         database.accountDao().insert(AccountEntity(2, "Bank", 0))
         val category = database.categoryDao().insertCategory(CategoryEntity(name = "Food", colorHex = "#FF7043"))

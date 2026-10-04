@@ -1,5 +1,7 @@
 package com.vibecheck.lifepulse.ui.neobrutalism
 
+import com.vibecheck.lifepulse.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -47,7 +49,7 @@ fun NeoInlineChoice(label: String, options: List<Pair<String, String>>, selected
             enabled = enabled && options.isNotEmpty(), modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = 12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(label, style = NeoTypography.bodyMedium, color = NeoColors.OnSurface, modifier = Modifier.weight(1f))
-                Text((options.firstOrNull { it.first == selectedKey }?.second ?: "Choose") + if (enabled) " ▾" else "",
+                Text((options.firstOrNull { it.first == selectedKey }?.second ?: stringResource(R.string.choice_placeholder_short)) + if (enabled) " ▾" else "",
                     style = NeoTypography.labelLarge, color = NeoColors.OnSurface, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
             }
         }

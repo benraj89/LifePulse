@@ -28,7 +28,6 @@ android {
         debug {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            resValue("string", "app_name", "LifePulse Dev")
         }
         release {
             isMinifyEnabled = false
@@ -36,7 +35,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            resValue("string", "app_name", "LifePulse")
             signingConfig = signingConfigs.getByName("debug")
         }
     }

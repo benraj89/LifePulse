@@ -1,5 +1,8 @@
 package com.vibecheck.lifepulse.ui.neobrutalism
 
+import com.vibecheck.lifepulse.R
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,10 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.TextStyle
-import java.util.Locale
 
-private val WEEKDAY_LABELS = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
 
 /**
  * A Neobrutalism-styled day picker: a month/year header with chunky left/right arrow
@@ -75,7 +75,7 @@ fun NeoDatePickerDialog(
                 ) {
                     NeoIconButton(
                         icon = Icons.Default.ChevronLeft,
-                        contentDescription = "Previous month",
+                        contentDescription = stringResource(R.string.calendar_previous_month),
                         onClick = { displayedMonth = displayedMonth.minusMonths(1) },
                         backgroundColor = NeoColors.Secondary,
                         size = 36.dp,
@@ -83,14 +83,14 @@ fun NeoDatePickerDialog(
                         shadowOffset = 3.dp
                     )
                     Text(
-                        text = "${displayedMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${displayedMonth.year}",
+                        text = displayedMonth.format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy")),
                         style = NeoTypography.titleMedium,
                         fontWeight = FontWeight.Black,
                         color = NeoColors.OnSurface
                     )
                     NeoIconButton(
                         icon = Icons.Default.ChevronRight,
-                        contentDescription = "Next month",
+                        contentDescription = stringResource(R.string.calendar_next_month),
                         onClick = { displayedMonth = displayedMonth.plusMonths(1) },
                         backgroundColor = NeoColors.Secondary,
                         size = 36.dp,
@@ -101,7 +101,7 @@ fun NeoDatePickerDialog(
 
                 // Weekday labels
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    WEEKDAY_LABELS.forEach { label ->
+                    stringArrayResource(R.array.calendar_weekday_labels).forEach { label ->
                         Box(
                             modifier = Modifier
                                 .weight(1f)

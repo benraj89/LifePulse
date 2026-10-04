@@ -1,5 +1,7 @@
 package com.vibecheck.lifepulse.ui.neobrutalism
 
+import com.vibecheck.lifepulse.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -45,9 +47,9 @@ import androidx.compose.ui.window.Dialog
 fun NeoTimePickerDialog(
     initialHour: Int,
     initialMinute: Int,
-    title: String = "Set reminder time",
-    confirmText: String = "OK",
-    cancelText: String = "Cancel",
+    title: String = stringResource(R.string.habit_time_picker_title),
+    confirmText: String = stringResource(R.string.action_ok),
+    cancelText: String = stringResource(R.string.add_expense_date_cancel),
     onConfirm: (hour: Int, minute: Int) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -70,7 +72,7 @@ fun NeoTimePickerDialog(
                 .widthIn(max = 460.dp),
             backLayerColor = NeoColors.Orange,
             backRotation = 0f,
-            tapeText = "SET TIME",
+            tapeText = stringResource(R.string.time_picker_tape),
             tapeColor = NeoColors.Cyan,
             contentPadding = 20.dp,
             verticalSpacing = 16.dp
@@ -122,7 +124,7 @@ fun NeoTimePickerDialog(
 
             NeoSegmentedToggle(
                 selectedIndex = if (isPm) 1 else 0,
-                options = listOf("AM" to NeoColors.Lime, "PM" to NeoColors.Cyan),
+                options = listOf(stringResource(R.string.time_am) to NeoColors.Lime, stringResource(R.string.time_pm) to NeoColors.Cyan),
                 onSelectedIndexChange = { isPm = it == 1 }
             )
 
@@ -177,7 +179,7 @@ fun NeoNumberStepper(
     ) {
         NeoIconButton(
             icon = Icons.Default.KeyboardArrowUp,
-            contentDescription = "Increase",
+            contentDescription = stringResource(R.string.action_increase),
             onClick = {
                 val next = value + safeStep
                 onValueChange(if (next > range.last) range.first else next)
@@ -210,7 +212,7 @@ fun NeoNumberStepper(
         }
         NeoIconButton(
             icon = Icons.Default.KeyboardArrowDown,
-            contentDescription = "Decrease",
+            contentDescription = stringResource(R.string.action_decrease),
             onClick = {
                 val next = value - safeStep
                 onValueChange(if (next < range.first) wrappedLast else next)
