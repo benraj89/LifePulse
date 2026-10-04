@@ -1,5 +1,7 @@
 package com.vibecheck.lifepulse.ui.habits
 
+import com.vibecheck.lifepulse.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -57,9 +59,10 @@ internal fun frequencyColor(frequency: HabitFrequency): Color = when (frequency)
     HabitFrequency.MONTHLY -> NeoColors.Orange
 }
 
+@Composable
 internal fun frequencyIcon(frequency: HabitFrequency): String = when (frequency) {
-    HabitFrequency.DAILY -> "D"
-    HabitFrequency.WEEKLY -> "W"
-    HabitFrequency.MONTHLY -> "M"
+    HabitFrequency.DAILY -> stringResource(R.string.frequency_daily_code)
+    HabitFrequency.WEEKLY -> stringResource(R.string.frequency_weekly_code)
+    HabitFrequency.MONTHLY -> stringResource(R.string.frequency_monthly_code)
 }
 

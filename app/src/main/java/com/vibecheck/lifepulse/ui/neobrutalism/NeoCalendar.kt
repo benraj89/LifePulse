@@ -1,5 +1,7 @@
 package com.vibecheck.lifepulse.ui.neobrutalism
 
+import com.vibecheck.lifepulse.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -69,7 +71,7 @@ fun NeoCalendarDialog(
                 ) {
                     NeoIconButton(
                         icon = Icons.Default.ChevronLeft,
-                        contentDescription = "Previous year",
+                        contentDescription = stringResource(R.string.calendar_previous_year),
                         onClick = { displayedYear -= 1 },
                         backgroundColor = NeoColors.Secondary,
                         size = 36.dp,
@@ -85,7 +87,7 @@ fun NeoCalendarDialog(
                     )
                     NeoIconButton(
                         icon = Icons.Default.ChevronRight,
-                        contentDescription = "Next year",
+                        contentDescription = stringResource(R.string.calendar_next_year),
                         onClick = { displayedYear += 1 },
                         backgroundColor = NeoColors.Secondary,
                         size = 36.dp,

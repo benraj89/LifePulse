@@ -1,5 +1,7 @@
 package com.vibecheck.lifepulse.ui.neobrutalism
 
+import com.vibecheck.lifepulse.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -85,7 +87,7 @@ fun NeoSwitch(
         contentAlignment = Alignment.CenterStart
     ) {
         Text(
-            text = if (checked) "ON" else "OFF",
+            text = if (checked) stringResource(R.string.switch_on) else stringResource(R.string.switch_off),
             style = NeoTypography.labelSmall,
             fontWeight = FontWeight.Black,
             color = NeoColors.Graphite,
@@ -111,7 +113,7 @@ fun NeoSwitch(
  * ```
  * NeoSegmentedToggle(
  *     selectedIndex = if (isPm) 1 else 0,
- *     options = listOf("AM" to NeoColors.Lime, "PM" to NeoColors.Cyan),
+ *     options = listOf(stringResource(R.string.time_am) to NeoColors.Lime, stringResource(R.string.time_pm) to NeoColors.Cyan),
  *     onSelectedIndexChange = { isPm = it == 1 }
  * )
  * ```

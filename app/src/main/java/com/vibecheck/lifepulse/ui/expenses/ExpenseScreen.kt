@@ -1,5 +1,7 @@
 package com.vibecheck.lifepulse.ui.expenses
 
+import com.vibecheck.lifepulse.R
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,7 +20,7 @@ import com.vibecheck.lifepulse.domain.model.*
 import com.vibecheck.lifepulse.ui.neobrutalism.*
 import java.time.format.DateTimeFormatter
 
-private enum class MoneyPage(val label: String) { SPENDING("Spending"), ACCOUNTS("Accounts"), OWED("Money owed") }
+private enum class MoneyPage(val labelRes: Int) { SPENDING(R.string.finance_spending_tab), ACCOUNTS(R.string.finance_accounts_tab), OWED(R.string.finance_owed_tab) }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,8 +58,8 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     }
 
     Scaffold(modifier, containerColor = NeoColors.Background, contentWindowInsets = WindowInsets(0),
-        topBar = { TopAppBar(title = { Text("Your money", style = NeoTypography.headlineMedium) },
-            actions = { NeoButton("Add entry", { openTransaction(if (page == MoneyPage.OWED) TransactionType.LEND else TransactionType.EXPENSE) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.finance_title), style = NeoTypography.headlineMedium) },
+            actions = { NeoButton(stringResource(R.string.transaction_add), { openTransaction(if (page == MoneyPage.OWED) TransactionType.LEND else TransactionType.EXPENSE) },
                 Modifier.padding(end = 16.dp), backgroundColor = NeoColors.Coral, contentColor = NeoColors.OnSurface,
                 horizontalPadding = 12.dp, verticalPadding = 8.dp, shadowOffset = 3.dp,
                 leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp)) }) },
@@ -68,7 +70,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
             }
         } }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            NeoTextTabs(MoneyPage.entries.map { it.name to it.label }, page.name,
+            NeoTextTabs(MoneyPage.entries.map { it.name to stringResource(it.labelRes) }, page.name,
                 { selectPage(MoneyPage.valueOf(it)) }, Modifier.padding(horizontal = 16.dp))
             key(page) {
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 32.dp),
@@ -101,23 +103,23 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     if (showBreakdown) ModalBottomSheet(onDismissRequest = { showBreakdown = false }, containerColor = NeoColors.Background,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         LazyColumn(Modifier.fillMaxWidth(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item { Text("Where your money went", style = NeoTypography.headlineMedium) }
-            item { Text("${state.selectedMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))} · ${Money.format(state.spentMinor)} spent", style = NeoTypography.bodyMedium) }
+            item { Text(stringResource(R.string.finance_breakdown_title), style = NeoTypography.headlineMedium) }
+            item { Text(stringResource(R.string.finance_breakdown_summary, state.selectedMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")), Money.format(state.spentMinor)), style = NeoTypography.bodyMedium) }
             items(state.byCategory) { CategorySpendingRow(it, state.spentMinor) }
-            if (state.byCategory.isEmpty()) item { Text("Add an expense to see your breakdown.") }
+            if (state.byCategory.isEmpty()) item { Text(stringResource(R.string.finance_breakdown_empty)) }
         }
     }
     if (showSettings) ModalBottomSheet(onDismissRequest = { showSettings = false }, containerColor = NeoColors.PaleCyan) {
         Column(Modifier.navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Currency", style = NeoTypography.headlineMedium)
-            NeoChoiceField("Used for all accounts", Money.supportedCurrencies.map { it to it }, Money.currencyCode,
+            Text(stringResource(R.string.currency_title), style = NeoTypography.headlineMedium)
+            NeoChoiceField(stringResource(R.string.currency_all_accounts), Money.supportedCurrencies.map { it to it }, Money.currencyCode,
                 { if (it != Money.currencyCode) currencyTarget = it })
-            Text("Changing currency changes the labels. Amounts are not converted.", style = NeoTypography.bodyMedium)
-            NeoButton("Done", { showSettings = false }, Modifier.fillMaxWidth())
+            Text(stringResource(R.string.currency_change_hint), style = NeoTypography.bodyMedium)
+            NeoButton(stringResource(R.string.action_done), { showSettings = false }, Modifier.fillMaxWidth())
         }
     }
-    deleteTarget?.let { target -> NeoConfirmDialog("Delete entry?", "Delete ${Money.format(target.amountMinor)}? This will update your account balance.",
-        "Delete", { deleteTarget = null }, { viewModel.deleteExpense(target.id); deleteTarget = null }) }
-    currencyTarget?.let { code -> NeoConfirmDialog("Use $code?", "Existing amounts will not be converted.",
-        "Change", { currencyTarget = null }, { viewModel.setCurrency(code); currencyTarget = null }) }
+    deleteTarget?.let { target -> NeoConfirmDialog(stringResource(R.string.transaction_delete_title), stringResource(R.string.transaction_delete_message, Money.format(target.amountMinor)),
+        stringResource(R.string.action_delete), { deleteTarget = null }, { viewModel.deleteExpense(target.id); deleteTarget = null }) }
+    currencyTarget?.let { code -> NeoConfirmDialog(stringResource(R.string.currency_confirm_title, code), stringResource(R.string.currency_existing_amounts_hint),
+        stringResource(R.string.action_change), { currencyTarget = null }, { viewModel.setCurrency(code); currencyTarget = null }) }
 }

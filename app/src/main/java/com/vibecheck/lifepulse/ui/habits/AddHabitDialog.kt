@@ -77,7 +77,7 @@ fun AddHabitDialog(
                 .verticalScroll(rememberScrollState()),
             backLayerColor = NeoColors.Cyan,
             backRotation = 0f,
-            tapeText = "NEW HABIT",
+            tapeText = stringResource(R.string.habit_dialog_tape),
             tapeColor = NeoColors.Orange,
             contentPadding = 20.dp,
             verticalSpacing = 16.dp
@@ -99,7 +99,7 @@ fun AddHabitDialog(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                NeoLabel("Title")
+                NeoLabel(stringResource(R.string.habit_title_label))
                 NeoTextField(
                     value = title,
                     onValueChange = { title = it },
@@ -221,7 +221,7 @@ fun AddHabitDialog(
 
                         NeoLabel(stringResource(R.string.habit_reminder_time_label))
                         NeoButton(
-                            text = "TIME  " + formatTime12Hour(reminderHour, reminderMinute),
+                            text = stringResource(R.string.habit_reminder_time_format, formatTime12Hour(reminderHour, reminderMinute)),
                             onClick = { showTimePicker = true },
                             backgroundColor = NeoColors.Cyan,
                             contentColor = NeoColors.OnSurface,
@@ -242,7 +242,7 @@ fun AddHabitDialog(
                     horizontalPadding = 14.dp
                 )
                 NeoButton(
-                    text = stringResource(R.string.action_add).uppercase() + " HABIT",
+                    text = stringResource(R.string.habit_add_action),
                     onClick = {
                         onConfirm(
                             title.trim(),

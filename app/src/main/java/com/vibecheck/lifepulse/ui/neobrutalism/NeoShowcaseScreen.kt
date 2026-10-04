@@ -1,5 +1,7 @@
 package com.vibecheck.lifepulse.ui.neobrutalism
 
+import com.vibecheck.lifepulse.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,15 +36,15 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun NeoShowcaseScreen() {
     var query by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("All") }
-    val filters = listOf("All", "Health", "Finance", "Focus")
+    var selectedFilter by remember { mutableStateOf(R.string.showcase_all) }
+    val filters = listOf(R.string.showcase_all, R.string.showcase_health, R.string.showcase_finance, R.string.showcase_focus)
 
     val items = remember {
         listOf(
-            "Morning Run" to NeoColors.Lime,
-            "Grocery Budget" to NeoColors.Yellow,
-            "Read 20 Pages" to NeoColors.Cyan,
-            "Meditate" to NeoColors.Purple
+            R.string.showcase_morning_run to NeoColors.Lime,
+            R.string.showcase_grocery_budget to NeoColors.Yellow,
+            R.string.showcase_read_pages to NeoColors.Cyan,
+            R.string.showcase_meditate to NeoColors.Purple
         )
     }
 
@@ -53,7 +55,7 @@ fun NeoShowcaseScreen() {
             .padding(20.dp)
     ) {
         Text(
-            text = "Today's Habits",
+            text = stringResource(R.string.showcase_habits_title),
             style = NeoTypography.headlineLarge,
             color = NeoColors.OnSurface
         )
@@ -63,7 +65,7 @@ fun NeoShowcaseScreen() {
         NeoTextField(
             value = query,
             onValueChange = { query = it },
-            placeholder = "Search habits...",
+            placeholder = stringResource(R.string.showcase_search_hint),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -72,7 +74,7 @@ fun NeoShowcaseScreen() {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             filters.forEach { filter ->
                 NeoChip(
-                    text = filter,
+                    text = stringResource(filter),
                     selected = filter == selectedFilter,
                     onClick = { selectedFilter = filter },
                     selectedColor = NeoColors.Accent
@@ -93,13 +95,13 @@ fun NeoShowcaseScreen() {
                 ) {
                     Column {
                         Text(
-                            text = label,
+                            text = stringResource(label),
                             style = NeoTypography.titleLarge,
                             color = NeoColors.OnSurface
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Tap to mark as complete",
+                            text = stringResource(R.string.showcase_complete_hint),
                             style = NeoTypography.bodyMedium,
                             color = NeoColors.OnSurface.copy(alpha = 0.7f)
                         )
@@ -115,7 +117,7 @@ fun NeoShowcaseScreen() {
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             NeoButton(
-                text = "Add Habit",
+                text = stringResource(R.string.showcase_add_habit),
                 onClick = { /* TODO */ },
                 backgroundColor = NeoColors.Primary,
                 leadingIcon = {
@@ -128,7 +130,7 @@ fun NeoShowcaseScreen() {
                 modifier = Modifier.weight(1f)
             )
             NeoButton(
-                text = "Clear",
+                text = stringResource(R.string.action_clear),
                 onClick = { /* TODO */ },
                 backgroundColor = NeoColors.Danger,
                 contentColor = NeoColors.White,

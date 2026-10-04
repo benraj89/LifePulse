@@ -1,5 +1,8 @@
 package com.vibecheck.lifepulse.ui.dashboard
 
+import com.vibecheck.lifepulse.R
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vibecheck.lifepulse.core.DateUtils
@@ -42,7 +45,6 @@ data class DashboardUiState(
     val accounts: List<Account> = emptyList(),
     val isLoading: Boolean = true
 ) {
-    val habitProgressLabel: String get() = "$completedHabits/$totalHabits Completed"
     val habitProgressFraction: Float
         get() = if (totalHabits == 0) 0f else completedHabits.toFloat() / totalHabits
 }
@@ -51,7 +53,8 @@ data class DashboardUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class DashboardViewModel @Inject constructor(
     private val habitRepository: HabitRepository,
-    private val expenseRepository: ExpenseRepository
+    private val expenseRepository: ExpenseRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _expenseSave = MutableStateFlow(SaveState())
@@ -107,20 +110,20 @@ class DashboardViewModel @Inject constructor(
                     amountMinor = amountMinor, note = note, dateTimestamp = timestamp))
                 _expenseSave.value = SaveState(saved = true)
             } catch (e: CancellationException) { throw e
-            } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: "Couldn't save. Please try again.") }
+            } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: context.getString(R.string.error_save_retry)) }
         }
     }
 
     fun addCategory(name: String, colorHex: String) = writeScope.launch {
         try { expenseRepository.addCategory(name, colorHex)
         } catch (e: CancellationException) { throw e
-        } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: "Couldn't add category.") }
+        } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: context.getString(R.string.error_add_category)) }
     }
 
     fun deleteCategory(id: Long) = writeScope.launch {
         try { expenseRepository.deleteCategory(id)
         } catch (e: CancellationException) { throw e
-        } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: "Couldn't delete category.") }
+        } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: context.getString(R.string.error_delete_category)) }
     }
 }
 

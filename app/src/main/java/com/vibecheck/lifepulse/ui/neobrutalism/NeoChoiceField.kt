@@ -1,5 +1,7 @@
 package com.vibecheck.lifepulse.ui.neobrutalism
 
+import com.vibecheck.lifepulse.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -24,7 +26,7 @@ fun NeoChoiceField(
         Text(label, style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
         Box {
             NeoButton(
-                text = (options.firstOrNull { it.first == selectedKey }?.second ?: "Choose…") + "  ▾",
+                text = (options.firstOrNull { it.first == selectedKey }?.second ?: stringResource(R.string.choice_placeholder)) + "  ▾",
                 onClick = { focusManager.clearFocus(); keyboard?.hide(); expanded = true }, modifier = Modifier.fillMaxWidth(),
                 backgroundColor = NeoColors.Surface, contentColor = NeoColors.OnSurface,
                 enabled = enabled && options.isNotEmpty()
@@ -44,11 +46,11 @@ fun NeoChoiceField(
 @Composable
 fun NeoConfirmDialog(title: String, message: String, confirmText: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
-        NeoStackedDialogCard(backLayerColor = NeoColors.Cyan, tapeText = "PLEASE CHECK") {
+        NeoStackedDialogCard(backLayerColor = NeoColors.Cyan, tapeText = stringResource(R.string.confirmation_tape)) {
             Text(title, style = NeoTypography.titleLarge, color = NeoColors.OnSurface)
             Text(message, style = NeoTypography.bodyMedium, color = NeoColors.OnSurface)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NeoButton("Cancel", onDismiss, Modifier.weight(1f), backgroundColor = NeoColors.Surface,
+                NeoButton(stringResource(R.string.add_expense_date_cancel), onDismiss, Modifier.weight(1f), backgroundColor = NeoColors.Surface,
                     contentColor = NeoColors.OnSurface, horizontalPadding = 8.dp)
                 NeoButton(confirmText, onConfirm, Modifier.weight(1f), backgroundColor = NeoColors.Coral,
                     contentColor = NeoColors.OnSurface, horizontalPadding = 8.dp)

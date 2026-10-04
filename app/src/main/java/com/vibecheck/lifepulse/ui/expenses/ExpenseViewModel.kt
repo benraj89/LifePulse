@@ -1,5 +1,6 @@
 package com.vibecheck.lifepulse.ui.expenses
 
+import com.vibecheck.lifepulse.R
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -40,7 +41,7 @@ data class ExpenseUiState(
 @HiltViewModel
 class ExpenseViewModel @Inject constructor(
     private val repository: ExpenseRepository,
-    @ApplicationContext context: Context
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val prefs = context.getSharedPreferences("finance_settings", Context.MODE_PRIVATE)
     private val selectedMonth = MutableStateFlow(YearMonth.now())
@@ -102,9 +103,9 @@ class ExpenseViewModel @Inject constructor(
                         selectedAccount.value = draft.accountId
                 }
                 _editor.value = SaveState(saved = true)
-                _message.value = if (draft.id == 0L) "Transaction saved" else "Transaction updated"
+                _message.value = if (draft.id == 0L) context.getString(R.string.transaction_saved) else context.getString(R.string.transaction_updated)
             } catch (e: CancellationException) { throw e
-            } catch (e: Exception) { _editor.value = SaveState(error = e.message ?: "Couldn't save. Please try again.") }
+            } catch (e: Exception) { _editor.value = SaveState(error = e.message ?: context.getString(R.string.error_save_retry)) }
         }
     }
 
@@ -115,9 +116,9 @@ class ExpenseViewModel @Inject constructor(
             try {
                 repository.saveAccount(id, name, openingMinor)
                 _accountEditor.value = SaveState(saved = true)
-                _message.value = "Account saved"
+                _message.value = context.getString(R.string.account_saved)
             } catch (e: CancellationException) { throw e
-            } catch (e: Exception) { _accountEditor.value = SaveState(error = e.message ?: "Couldn't save account.") }
+            } catch (e: Exception) { _accountEditor.value = SaveState(error = e.message ?: context.getString(R.string.error_save_account)) }
         }
     }
 
@@ -125,23 +126,23 @@ class ExpenseViewModel @Inject constructor(
         try { repository.addCategory(name, color, kind); _editor.value = _editor.value.copy(error = null)
         } catch (e: CancellationException) { throw e
         } catch (e: Exception) {
-            _editor.value = _editor.value.copy(error = e.message ?: "Couldn't add category.")
+            _editor.value = _editor.value.copy(error = e.message ?: context.getString(R.string.error_add_category))
         }
     }
     fun deleteCategory(id: Long) = writeScope.launch {
         try { repository.deleteCategory(id)
         } catch (e: CancellationException) { throw e
-        } catch (e: Exception) { _message.value = e.message ?: "Couldn't delete category." }
+        } catch (e: Exception) { _message.value = e.message ?: context.getString(R.string.error_delete_category) }
     }
     fun deleteExpense(id: Long) = writeScope.launch {
-        try { repository.deleteExpense(id); _message.value = "Transaction deleted"
+        try { repository.deleteExpense(id); _message.value = context.getString(R.string.transaction_deleted)
         } catch (e: CancellationException) { throw e
-        } catch (e: Exception) { _message.value = e.message ?: "Couldn't delete transaction." }
+        } catch (e: Exception) { _message.value = e.message ?: context.getString(R.string.error_delete_transaction) }
     }
     fun setCurrency(code: String) {
         if (code !in Money.supportedCurrencies) return
         Money.currencyCode = code
         prefs.edit().putString("currency", code).apply()
-        _message.value = "Currency set to $code. Existing amounts are not converted."
+        _message.value = context.getString(R.string.currency_changed_message, code)
     }
 }

@@ -1,8 +1,7 @@
 package com.vibecheck.lifepulse.domain.model
 
-enum class TransactionType(val label: String) {
-    EXPENSE("Expense"), INCOME("Income"), TRANSFER("Transfer"), LEND("Lend"), BORROW("Borrow"),
-    REPAYMENT_RECEIVED("Repayment received"), REPAYMENT_PAID("Repayment paid");
+enum class TransactionType {
+    EXPENSE, INCOME, TRANSFER, LEND, BORROW, REPAYMENT_RECEIVED, REPAYMENT_PAID;
     val needsCategory get() = this == EXPENSE || this == INCOME
     val isLoan get() = this == LEND || this == BORROW
     val isRepayment get() = this == REPAYMENT_RECEIVED || this == REPAYMENT_PAID

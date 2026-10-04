@@ -117,7 +117,7 @@ fun AddExpenseSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            NeoChoiceField("Pay from", accounts.map { it.id.toString() to it.name }, accountId?.toString(),
+            NeoChoiceField(stringResource(R.string.transaction_pay_from), accounts.map { it.id.toString() to it.name }, accountId?.toString(),
                 { accountId = it.toLong() }, enabled = !saving)
             CategoryDropdown(
                 categories = categories,
@@ -182,9 +182,9 @@ fun AddExpenseSheet(
             )
 
             saveError?.let { Text(it, style = NeoTypography.bodyMedium, color = NeoColors.Danger) }
-            if (selectedDate.isAfter(LocalDate.now())) Text("Choose today or an earlier date.", color = NeoColors.Danger)
+            if (selectedDate.isAfter(LocalDate.now())) Text(stringResource(R.string.error_future_date), color = NeoColors.Danger)
             NeoButton(
-                text = if (saving) "Saving…" else stringResource(R.string.add_expense_save),
+                text = if (saving) stringResource(R.string.action_saving) else stringResource(R.string.add_expense_save),
                 onClick = {
                     val category = selectedCategory ?: return@NeoButton
                     val timestamp = selectedDate.atTime(java.time.LocalTime.now())

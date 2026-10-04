@@ -95,7 +95,7 @@ fun DashboardScreen(
         ) {
             item {
                 SummaryCard(
-                    habitProgressLabel = state.habitProgressLabel,
+                    habitProgressLabel = stringResource(R.string.dashboard_habit_completed_format, state.completedHabits, state.totalHabits),
                     habitProgressFraction = state.habitProgressFraction,
                     spentToday = state.spentToday,
                     spentThisMonth = state.spentThisMonth
@@ -366,7 +366,7 @@ fun Double.asCurrency(): String =
 private fun SummaryCardPreview() {
     NeoBrutalismTheme {
         SummaryCard(
-            habitProgressLabel = "3/5 Completed",
+            habitProgressLabel = stringResource(R.string.dashboard_habit_completed_format, 3, 5),
             habitProgressFraction = 0.6f,
             spentToday = 24.50,
             spentThisMonth = 412.30

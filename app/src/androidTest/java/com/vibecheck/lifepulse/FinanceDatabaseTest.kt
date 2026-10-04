@@ -32,7 +32,7 @@ class FinanceDatabaseTest {
 
     @Before fun setup() = runBlocking {
         database = Room.inMemoryDatabaseBuilder(context, LifePulseDatabase::class.java).build()
-        repository = ExpenseRepositoryImpl(database.expenseDao(), database.categoryDao(), database.accountDao(), database)
+        repository = ExpenseRepositoryImpl(database.expenseDao(), database.categoryDao(), database.accountDao(), database, context)
         database.accountDao().insert(AccountEntity(1, "Cash"))
         database.accountDao().insert(AccountEntity(2, "Bank"))
         expenseCategory = database.categoryDao().insertCategory(CategoryEntity(name = "Food", colorHex = "#FF7043"))
@@ -125,7 +125,7 @@ class FinanceDatabaseTest {
         val upgraded = Room.databaseBuilder(context, LifePulseDatabase::class.java, name)
             .addMigrations(DatabaseModule.MIGRATION_4_5).build()
         try {
-            val repo = ExpenseRepositoryImpl(upgraded.expenseDao(), upgraded.categoryDao(), upgraded.accountDao(), upgraded)
+            val repo = ExpenseRepositoryImpl(upgraded.expenseDao(), upgraded.categoryDao(), upgraded.accountDao(), upgraded, context)
             val record = repo.observeTransactions().first().single()
             assertEquals(7L, record.id)
             assertEquals(1235L, record.amountMinor)

@@ -86,7 +86,7 @@ fun HabitRow(habit: Habit, accentColor: Color = NeoColors.Primary, onToggle: () 
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "🔥${habit.currentStreak}",
+                            text = stringResource(R.string.habit_streak_badge, habit.currentStreak),
                             style = NeoTypography.labelLarge,
                             color = NeoColors.OnSurface
                         )
@@ -114,14 +114,15 @@ internal fun frequencyLabel(frequency: HabitFrequency): String = when (frequency
     HabitFrequency.MONTHLY -> stringResource(R.string.frequency_monthly)
 }
 
+@Composable
 internal fun dayOfMonthOrdinal(day: Int): String {
-    val suffix = if (day in 11..13) "th" else when (day % 10) {
-        1 -> "st"
-        2 -> "nd"
-        3 -> "rd"
-        else -> "th"
+    val suffix = if (day in 11..13) R.string.ordinal_other else when (day % 10) {
+        1 -> R.string.ordinal_first
+        2 -> R.string.ordinal_second
+        3 -> R.string.ordinal_third
+        else -> R.string.ordinal_other
     }
-    return "$day$suffix"
+    return stringResource(suffix, day)
 }
 
 @Composable
@@ -130,26 +131,27 @@ internal fun reminderSummary(habit: Habit): String {
 
     val time = formatTime12Hour(habit.reminderHour!!, habit.reminderMinute!!)
     return when (habit.frequency) {
-        HabitFrequency.DAILY -> "⏰ $time daily"
+        HabitFrequency.DAILY -> stringResource(R.string.habit_reminder_daily_format, time)
         HabitFrequency.WEEKLY -> {
             val dayName = habit.reminderDayOfWeek
                 ?.let { DayOfWeek.of(it).getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
                 ?: frequencyLabel(HabitFrequency.WEEKLY)
-            "⏰ $dayName @ $time"
+            stringResource(R.string.habit_reminder_day_time_format, dayName, time)
         }
         HabitFrequency.MONTHLY -> {
             val day = habit.reminderDayOfMonth ?: 1
-            "⏰ ${dayOfMonthOrdinal(day)} @ $time"
+            stringResource(R.string.habit_reminder_day_time_format, dayOfMonthOrdinal(day), time)
         }
     }
 }
 
+@Composable
 internal fun formatTime12Hour(hour24: Int, minute: Int): String {
     val isPm = hour24 >= 12
     val hour12 = when (val h = hour24 % 12) {
         0 -> 12
         else -> h
     }
-    return "%d:%02d %s".format(hour12, minute, if (isPm) "PM" else "AM")
+    return stringResource(R.string.time_12_hour_format, hour12, minute, stringResource(if (isPm) R.string.time_pm else R.string.time_am))
 }
 
