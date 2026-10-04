@@ -9,9 +9,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vibecheck.lifepulse.R
 import com.vibecheck.lifepulse.core.*
 import com.vibecheck.lifepulse.domain.model.*
 import com.vibecheck.lifepulse.ui.neobrutalism.*
