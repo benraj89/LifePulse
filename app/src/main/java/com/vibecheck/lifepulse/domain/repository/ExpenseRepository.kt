@@ -9,10 +9,13 @@ import com.vibecheck.lifepulse.domain.model.TransactionType
 import kotlinx.coroutines.flow.Flow
 
 interface ExpenseRepository {
+    fun observeCurrencySettings(): Flow<com.vibecheck.lifepulse.domain.model.CurrencySettings?>
+    suspend fun initializeCurrency()
+    suspend fun setCurrency(code: String)
     fun observeTransactions(): Flow<List<Expense>>
     fun observeAccounts(): Flow<List<Account>>
     suspend fun saveTransaction(draft: TransactionDraft): Long
-    suspend fun saveAccount(id: Long, name: String, openingMinor: Long): Long
+    suspend fun saveAccount(id: Long, name: String, openingMinor: Long, currencyCode: String? = null): Long
 
     fun observeTotalInRange(start: Long, end: Long): Flow<Double>
 

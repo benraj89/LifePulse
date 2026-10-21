@@ -24,10 +24,12 @@ private enum class MoneyPage(@androidx.annotation.StringRes val labelRes: Int) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = hiltViewModel()) {
+fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = hiltViewModel(),
+                  backupViewModel: BackupViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val editor by viewModel.editor.collectAsStateWithLifecycle()
     val accountEditor by viewModel.accountEditor.collectAsStateWithLifecycle()
+    val currencyEditor by viewModel.currencyEditor.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     var pageName by rememberSaveable { mutableStateOf(MoneyPage.SPENDING.name) }
     val page = MoneyPage.valueOf(pageName)
@@ -47,6 +49,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(message) { message?.let { snackbar.showSnackbar(it); viewModel.clearMessage() } }
     LaunchedEffect(editor.saved) { if (editor.saved) activityFilter = EntryFilter.ALL }
+    LaunchedEffect(currencyEditor.saved) { if (currencyEditor.saved) showSettings = false }
     fun selectPage(next: MoneyPage) { pageName = next.name; viewModel.selectAccount(null) }
     BackHandler(page != MoneyPage.SPENDING) { selectPage(MoneyPage.SPENDING) }
     fun openTransaction(type: TransactionType, transaction: Expense? = null, loan: Expense? = null) {
@@ -65,7 +68,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     Scaffold(modifier, containerColor = NeoColors.Background, contentWindowInsets = WindowInsets(0),
         topBar = { TopAppBar(title = { Text(stringResource(R.string.finance_title), style = NeoTypography.headlineMedium) },
             actions = {
-                BackupActions(snackbar, onRestored = { viewModel.selectAccount(null) })
+                BackupActions(snackbar, onRestored = { viewModel.selectAccount(null) }, viewModel = backupViewModel)
                 NeoButton(stringResource(R.string.transaction_add), { openTransaction(if (page == MoneyPage.OWED) TransactionType.LEND else TransactionType.EXPENSE) },
                 Modifier.padding(end = 16.dp), backgroundColor = NeoColors.Coral, contentColor = NeoColors.OnSurface,
                 horizontalPadding = 12.dp, verticalPadding = 8.dp, shadowOffset = 3.dp,
@@ -87,7 +90,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
                             { showCalendar = true }, { showInsights = true },
                             viewModel::selectAccount, { openTransaction(it.type, transaction = it) })
                         MoneyPage.ACCOUNTS -> accountsSection(state, { openAccount(it) },
-                            { showSettings = true },
+                            { viewModel.resetCurrencyEditor(); showSettings = true },
                             { openTransaction(it.type, transaction = it) })
                         MoneyPage.OWED -> owedSection(state, showSettled, { showSettled = it },
                             { openTransaction(it.type, transaction = it) },
@@ -107,14 +110,11 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     }
     if (showAccount) key(editingAccount?.id) { AccountSheet(editingAccount, accountEditor, { showAccount = false }, viewModel::saveAccount) }
     if (showCalendar) NeoCalendarDialog(state.selectedMonth, viewModel::selectMonth, { showCalendar = false })
-    if (showSettings) ModalBottomSheet(onDismissRequest = { showSettings = false }, containerColor = NeoColors.PaleCyan) {
-        Column(Modifier.navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(stringResource(R.string.currency_title), style = NeoTypography.headlineMedium)
-            NeoChoiceField(stringResource(R.string.currency_all_accounts), Money.supportedCurrencies.map { it to it }, Money.currencyCode,
-                { if (it != Money.currencyCode) currencyTarget = it })
-            Text(stringResource(R.string.currency_change_hint), style = NeoTypography.bodyMedium)
-            NeoButton(stringResource(R.string.action_done), { showSettings = false }, Modifier.fillMaxWidth())
-        }
+    if (showSettings) ModalBottomSheet(onDismissRequest = { if (!currencyEditor.saving) showSettings = false }, containerColor = NeoColors.PaleCyan,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        CurrencyPicker(Money.currencyCode, { code -> currencyTarget = code }, Modifier.fillMaxHeight(0.9f),
+            locked = state.transactions.isNotEmpty() || state.accounts.any { it.openingMinor != 0L },
+            saving = currencyEditor.saving, error = currencyEditor.error, onDismiss = { showSettings = false })
     }
     deleteTarget?.let { target -> NeoConfirmDialog(stringResource(R.string.transaction_delete_title), stringResource(R.string.transaction_delete_message, Money.format(target.amountMinor)),
         stringResource(R.string.action_delete), { deleteTarget = null }, { viewModel.deleteExpense(target.id); deleteTarget = null }) }

@@ -18,9 +18,10 @@ import com.vibecheck.lifepulse.data.local.entity.HabitLogEntity
         AccountEntity::class,
         HabitLogEntity::class,
         CategoryEntity::class,
-        ExpenseEntity::class
+        ExpenseEntity::class,
+        com.vibecheck.lifepulse.data.local.entity.FinanceSettingsEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class LifePulseDatabase : RoomDatabase() {
@@ -30,6 +31,7 @@ abstract class LifePulseDatabase : RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao
     abstract fun accountDao(): AccountDao
     abstract fun backupDao(): com.vibecheck.lifepulse.data.local.dao.BackupDao
+    abstract fun financeSettingsDao(): com.vibecheck.lifepulse.data.local.dao.FinanceSettingsDao
 
     companion object {
         const val NAME = "lifepulse.db"

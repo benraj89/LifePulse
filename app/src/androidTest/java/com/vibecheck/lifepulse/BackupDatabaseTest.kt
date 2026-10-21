@@ -28,6 +28,8 @@ class BackupDatabaseTest {
     @Before fun setup(): Unit = runBlocking {
         source = Room.inMemoryDatabaseBuilder(context, LifePulseDatabase::class.java).build()
         target = Room.inMemoryDatabaseBuilder(context, LifePulseDatabase::class.java).build()
+        source.financeSettingsDao().save(FinanceSettingsEntity(currencyCode = "USD", confirmed = true))
+        target.financeSettingsDao().save(FinanceSettingsEntity(currencyCode = "EUR", confirmed = true))
         exporter = FinanceBackupRepository(context, source)
         importer = FinanceBackupRepository(context, target)
         source.backupDao().insertAccounts(listOf(AccountEntity(1, "Cash", 1234), AccountEntity(2, "Bank", -123)))
@@ -58,6 +60,7 @@ class BackupDatabaseTest {
         assertEquals(listOf(AccountEntity(99, "Keep me")), target.backupDao().accounts(0, 500))
         assertEquals(99L, transactions(target).single().id)
         assertEquals("Walk", target.habitDao().getHabitById(1)?.title)
+        assertEquals("EUR", target.financeSettingsDao().get()?.currencyCode)
     }
     private suspend fun rejected(text: String) {
         try { importer.restore(text.byteInputStream()); fail("Expected restore rejection") }
@@ -75,20 +78,46 @@ class BackupDatabaseTest {
         assertEquals(source.backupDao().accounts(0, 500), target.backupDao().accounts(0, 500))
         assertEquals(source.backupDao().categories(0, 500), target.backupDao().categories(0, 500))
         assertEquals(transactions(source), transactions(target))
+        assertEquals(source.financeSettingsDao().get(), target.financeSettingsDao().get())
         assertEquals(listOf("Alex", "Zoë 王"), target.backupDao().contacts("", 500))
         assertEquals("Walk", target.habitDao().getHabitById(1)?.title)
     }
     @Test fun checksumMismatchCannotReplaceData() = runBlocking {
         rejected(backup().replace("\"openingMinor\":1234", "\"openingMinor\":1235"))
     }
-    @Test fun unsupportedVersionCannotReplaceData() = runBlocking { rejected(backup().replace("\"version\":1", "\"version\":2")) }
+    @Test fun currencyAndPrecisionAreValidatedAndCoveredByChecksum() = runBlocking {
+        val original = backup()
+        rejected(original.replace("\"code\":\"USD\"", "\"code\":\"EUR\""))
+        rejected(rehash(original.replace("\"fractionDigits\":2", "\"fractionDigits\":3")))
+        rejected(rehash(original.replace("\"code\":\"USD\"", "\"code\":\"XXX\"")))
+    }
+    @Test fun nonTwoDecimalCurrencySurvivesBackupAndIsExplicitInCsv() = runBlocking {
+        source.financeSettingsDao().save(FinanceSettingsEntity(currencyCode = "KWD", confirmed = true))
+        importer.restore(backup().byteInputStream())
+        assertEquals("KWD", target.financeSettingsDao().get()?.currencyCode)
+        assertEquals(1234L, target.expenseDao().get(1)?.amountMinor)
+        val csv = ByteArrayOutputStream().also { exporter.writeCsv(it) }.toString("UTF-8")
+        assertTrue(csv.contains("\"EXPENSE\",\"1.234\",\"KWD\""))
+    }
+    @Test fun legacyBackupRequiresExplicitOriginalCurrencyBeforeReplacingAnything() = runBlocking {
+        val legacy = rehash(backup().replace("\"version\":2", "\"version\":1")
+            .replace("\"currency\":{\"code\":\"USD\",\"fractionDigits\":2},", ""))
+        rejected(legacy)
+        try { importer.restore(legacy.byteInputStream(), "JPY"); fail("Legacy amounts use hundredths") }
+        catch (_: InvalidBackupException) { }
+        assertOriginal()
+        importer.restore(legacy.byteInputStream(), "USD")
+        assertEquals("USD", target.financeSettingsDao().get()?.currencyCode)
+        assertEquals(transactions(source), transactions(target))
+    }
+    @Test fun unsupportedVersionCannotReplaceData() = runBlocking { rejected(backup().replace("\"version\":2", "\"version\":999")) }
     @Test fun malformedTruncatedAndTrailingContentAreRejected() = runBlocking {
         val original = backup()
         rejected(original.dropLast(2))
         rejected(original + "{}")
         rejected("Type,Amount,Note\nEXPENSE,12,hello")
-        rejected(original.replace("\"version\":1", "\"version\":1,\"version\":1"))
-        rejected(original.replace("\"version\":1", "\"version\":\"1\""))
+        rejected(original.replace("\"version\":2", "\"version\":2,\"version\":2"))
+        rejected(original.replace("\"version\":2", "\"version\":\"2\""))
     }
     @Test fun validChecksumDoesNotBypassRelationValidation() = runBlocking {
         val original = backup()
@@ -163,11 +192,11 @@ class BackupDatabaseTest {
     @Test fun csvIncludesAllTypesAndEscapesFields() = runBlocking {
         source.expenseDao().insertExpense(ExpenseEntity(amountMinor = 1, dateTimestamp = 0, type = "LEND", person = "=1+1", note = "@SUM(A1)"))
         val csv = ByteArrayOutputStream().also { exporter.writeCsv(it) }.toString("UTF-8")
-        assertTrue(csv.startsWith("\uFEFFDateTime (UTC),Type,Amount,Category,Account,ToAccount,Contact,Note\r\n"))
-        assertTrue(csv.contains("\"1970-01-01 00:00:00\",\"EXPENSE\",\"12.34\",\"Food\",\"Cash\""))
+        assertTrue(csv.startsWith("\uFEFFDateTime (UTC),Type,Amount,Currency,Category,Account,ToAccount,Contact,Note\r\n"))
+        assertTrue(csv.contains("\"1970-01-01 00:00:00\",\"EXPENSE\",\"12.34\",\"USD\",\"Food\",\"Cash\""))
         assertTrue(csv.contains("\"Lunch, \"\"tea\"\"\nnext line\""))
         assertTrue(csv.contains("\"'=1+1\",\"'@SUM(A1)\""))
-        assertTrue(csv.contains("\"TRANSFER\",\"1.00\",\"\",\"Cash\",\"Bank\""))
+        assertTrue(csv.contains("\"TRANSFER\",\"1.00\",\"USD\",\"\",\"Cash\",\"Bank\""))
         listOf("EXPENSE", "INCOME", "TRANSFER", "LEND", "BORROW", "REPAYMENT_RECEIVED", "REPAYMENT_PAID").forEach { assertTrue(csv.contains("\"$it\"")) }
     }
     @Test fun severalPagesRestoreWithoutMissingOrDuplicatingTransactions() = runBlocking {

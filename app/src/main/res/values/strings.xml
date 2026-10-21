@@ -212,11 +212,11 @@
     <!-- Currency settings -->
     <string name="currency_title">Currency</string>
     <string name="currency_all_accounts">Used for all accounts</string>
-    <string name="currency_change_hint">Changing currency changes the labels. Amounts are not converted.</string>
-    <string name="currency_existing_amounts_hint">Existing amounts will not be converted.</string>
+    <string name="currency_change_hint">Choose one currency for all your accounts.</string>
+    <string name="currency_existing_amounts_hint">This currency will be used for your accounts. Changing your device region will not change it.</string>
     <string name="currency_confirm_title">Use %1$s?</string>
     <string name="currency_current_format">Currency · %1$s</string>
-    <string name="currency_changed_message">Currency set to %1$s. Existing amounts are not converted.</string>
+    <string name="currency_changed_message">Currency set to %1$s.</string>
 
     <!-- Categories -->
     <string name="category_manage_action">Manage categories…</string>
@@ -312,7 +312,7 @@
     <string name="backup_csv_button">Export spreadsheet (.csv)</string>
     <string name="backup_privacy_hint">Files contain readable financial data. Save them somewhere you trust.</string>
     <string name="backup_restore_confirm_title">Replace financial data?</string>
-    <string name="backup_restore_confirm_message">This replaces all current accounts, categories, contacts and transactions with the selected backup. Save a backup first if you want to keep your current data. Habits and your currency setting stay as they are.</string>
+    <string name="backup_restore_confirm_message">This replaces all current accounts, categories, contacts, transactions and their currency with the selected backup. Save a backup first if you want to keep your current data. Habits stay as they are.</string>
     <string name="backup_restore_confirm_button">Replace &amp; restore</string>
     <string name="backup_progress_save">Creating your backup…</string>
     <string name="backup_progress_restore">Checking and restoring…</string>
@@ -457,4 +457,24 @@
         <item>Gifts</item>
         <item>Other income</item>
     </string-array>
+    <!-- Currency setup, selection and backup compatibility -->
+    <string name="currency_choose_title">Choose your currency</string>
+    <string name="currency_setup_hint">We suggest a currency from your device region when possible. Confirm it or choose another. Your choice stays fixed when your region changes.</string>
+    <string name="currency_search_hint">Search currency name, code or symbol</string>
+    <string name="currency_no_results">No matching currencies</string>
+    <string name="currency_selection_preview">Example: %1$s · %2$s</string>
+    <string name="currency_save">Save currency</string>
+    <string name="currency_locked_hint">Your currency is tied to your financial records. It cannot change while transactions or nonzero opening balances exist. Restoring a backup restores its currency too.</string>
+    <string name="currency_save_error">Couldn\'t save your currency. Please try again.</string>
+    <string name="currency_load_error">Couldn\'t load your currency. Please try again.</string>
+    <string name="error_currency_invalid">Choose a supported currency.</string>
+    <string name="error_currency_required">Choose and confirm your currency first.</string>
+    <string name="error_currency_changed">The ledger currency changed. Close this form and open it again.</string>
+    <string name="action_retry">Retry</string>
+    <string name="backup_error_currency">The backup currency or decimal precision is invalid.</string>
+    <string name="backup_error_legacy_currency">This older backup does not include its currency.</string>
+    <string name="currency_legacy_title">Original backup currency</string>
+    <string name="currency_recover_title">Confirm your original currency</string>
+    <string name="currency_recover_hint">Your existing records were saved without a recoverable currency setting. Choose their original currency to keep the amounts unchanged.</string>
+    <string name="currency_legacy_hint">This older backup did not save its currency. Choose the currency it used from the six supported by that version. Amounts will not be converted.</string>
 </resources>

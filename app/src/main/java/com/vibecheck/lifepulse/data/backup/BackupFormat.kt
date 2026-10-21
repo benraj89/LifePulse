@@ -9,6 +9,7 @@ import android.util.JsonWriter
 import com.vibecheck.lifepulse.data.local.dao.*
 import com.vibecheck.lifepulse.data.local.entity.*
 import com.vibecheck.lifepulse.domain.model.TransactionType
+import com.vibecheck.lifepulse.core.CurrencyCatalog
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import java.io.*
@@ -52,9 +53,10 @@ object BackupChecksum {
     }
 }
 
-/** Version 1 uses fixed field order and compact UTF-8 JSON for checksum canonicalization. */
+/** Fixed field order and compact UTF-8 JSON provide checksum canonicalization. V2 binds currency to amounts. */
 object BackupFormat {
-    const val VERSION = 1
+    const val VERSION = 2
+    val LEGACY_CURRENCIES = CurrencyCatalog.LEGACY_CODES
     const val MAX_FILE_BYTES = 512L * 1024 * 1024
     private const val MAX_ROWS = 1_000_000
     private const val MAX_TEXT = 16_384
@@ -63,7 +65,12 @@ object BackupFormat {
     fun writer(output: OutputStream) = JsonWriter(OutputStreamWriter(output, Charsets.UTF_8))
 
     suspend fun writePayload(dao: BackupDao, writer: JsonWriter) {
-        writer.beginObject().name("accounts").beginArray()
+        val settings = dao.settings()
+        val currency = settings?.currencyCode?.let(CurrencyCatalog::find)
+        checkBackup(settings?.confirmed == true && currency != null, R.string.error_currency_required)
+        writer.beginObject()
+        writeCurrency(writer, currency!!.code, currency.fractionDigits)
+        writer.name("accounts").beginArray()
         dao.forEachAccountPage { rows -> rows.forEach { writeAccount(writer, it) } }
         writer.endArray().name("categories").beginArray()
         dao.forEachCategoryPage { rows -> rows.forEach { writeCategory(writer, it) } }
@@ -99,7 +106,7 @@ object BackupFormat {
     }
 
     /** Only a private staging database is mutated here; the live DB is untouched until this returns. */
-    suspend fun readInto(input: InputStream, stage: BackupDao): BackupMetadata {
+    suspend fun readInto(input: InputStream, stage: BackupDao, legacyCurrency: String? = null): BackupMetadata {
         val decoder = Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT)
         val reader = JsonReader(GuardedJsonReader(InputStreamReader(BoundedInputStream(input, MAX_FILE_BYTES), decoder)))
@@ -108,7 +115,8 @@ object BackupFormat {
         reader.field("metadata"); reader.beginObject()
         reader.field("version")
         val version = reader.integer()
-        checkBackup(version == VERSION.toLong(), R.string.backup_error_version)
+        checkBackup(version == 1L || version == VERSION.toLong(), R.string.backup_error_version)
+        if (version == 1L) checkBackup(legacyCurrency in LEGACY_CURRENCIES, R.string.backup_error_legacy_currency)
         reader.field("timestamp")
         val timestamp = reader.text()
         checkBackup(runCatching { Instant.parse(timestamp) }.isSuccess, R.string.backup_error_timestamp)
@@ -118,13 +126,24 @@ object BackupFormat {
         reader.endObject()
         reader.field("data"); reader.beginObject()
 
+        val currencyCode: String
+        if (version >= 2L) {
+            reader.field("currency"); reader.beginObject()
+            reader.field("code"); currencyCode = reader.text()
+            reader.field("fractionDigits"); val digits = reader.integer()
+            checkBackup(CurrencyCatalog.find(currencyCode)?.fractionDigits?.toLong() == digits, R.string.backup_error_currency)
+            reader.endObject()
+        } else currencyCode = legacyCurrency!!
+
         val digest = MessageDigest.getInstance("SHA-256")
         val sink = object : OutputStream() {
             override fun write(b: Int) = Unit
             override fun write(b: ByteArray, off: Int, len: Int) = Unit
         }
         val canonical = writer(DigestOutputStream(sink, digest))
-        canonical.beginObject().name("accounts").beginArray()
+        canonical.beginObject()
+        if (version >= 2L) writeCurrency(canonical, currencyCode, CurrencyCatalog.find(currencyCode)!!.fractionDigits)
+        canonical.name("accounts").beginArray()
         reader.field("accounts")
         var accountCount = 0
         readArray(reader, { readAccount(reader) }) { rows ->
@@ -167,7 +186,8 @@ object BackupFormat {
         canonical.endArray().endObject(); canonical.close()
         checkBackup(BackupChecksum.verify(checksum, digest.digest()), R.string.backup_error_checksum_failed)
         checkBackup(stage.invalidRelations() == 0L && stage.overpaidLoans() == 0L, R.string.backup_error_relationships)
-        return BackupMetadata(VERSION, timestamp, checksum)
+        stage.saveSettings(FinanceSettingsEntity(currencyCode = currencyCode, confirmed = true))
+        return BackupMetadata(version.toInt(), timestamp, checksum)
     }
 
     private suspend fun <T> readArray(reader: JsonReader, read: () -> T, insert: suspend (List<T>) -> Unit) {
@@ -182,6 +202,11 @@ object BackupFormat {
         }
         if (batch.isNotEmpty()) insert(batch)
         reader.endArray()
+    }
+
+    private fun writeCurrency(w: JsonWriter, code: String, digits: Int) {
+        w.name("currency").beginObject().name("code").value(code)
+            .name("fractionDigits").value(digits.toLong()).endObject()
     }
 
     private fun writeAccount(w: JsonWriter, a: AccountEntity) {

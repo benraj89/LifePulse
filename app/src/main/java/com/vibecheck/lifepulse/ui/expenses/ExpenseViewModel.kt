@@ -41,7 +41,6 @@ class ExpenseViewModel @Inject constructor(
     private val repository: ExpenseRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
-    private val prefs = context.getSharedPreferences("finance_settings", Context.MODE_PRIVATE)
     private val selectedMonth = MutableStateFlow(YearMonth.now())
     private val selectedAccount = MutableStateFlow<Long?>(null)
     // Only finite accepted writes run here. They finish even if navigation destroys this ViewModel.
@@ -50,6 +49,9 @@ class ExpenseViewModel @Inject constructor(
     val editor = _editor.asStateFlow()
     private val _accountEditor = MutableStateFlow(SaveState())
     val accountEditor = _accountEditor.asStateFlow()
+    private val _currencyEditor = MutableStateFlow(SaveState())
+    val currencyEditor = _currencyEditor.asStateFlow()
+    fun resetCurrencyEditor() { _currencyEditor.value = SaveState() }
     private val _message = MutableStateFlow<String?>(null)
     val message = _message.asStateFlow()
 
@@ -106,10 +108,11 @@ class ExpenseViewModel @Inject constructor(
 
     fun saveAccount(id: Long, name: String, openingMinor: Long) {
         if (_accountEditor.value.saving) return
+        val currencyCode = Money.currencyCode
         _accountEditor.value = SaveState(saving = true)
         writeScope.launch {
             try {
-                repository.saveAccount(id, name, openingMinor)
+                repository.saveAccount(id, name, openingMinor, currencyCode)
                 _accountEditor.value = SaveState(saved = true)
                 _message.value = context.getString(R.string.account_saved)
             } catch (e: CancellationException) { throw e
@@ -135,9 +138,15 @@ class ExpenseViewModel @Inject constructor(
         } catch (e: Exception) { _message.value = e.message ?: context.getString(R.string.error_delete_transaction) }
     }
     fun setCurrency(code: String) {
-        if (code !in Money.supportedCurrencies) return
-        Money.currencyCode = code
-        prefs.edit().putString("currency", code).apply()
-        _message.value = context.getString(R.string.currency_changed_message, code)
+        if (_currencyEditor.value.saving) return
+        _currencyEditor.value = SaveState(saving = true)
+        writeScope.launch {
+            try {
+                repository.setCurrency(code)
+                _currencyEditor.value = SaveState(saved = true)
+                _message.value = context.getString(R.string.currency_changed_message, code)
+            } catch (e: CancellationException) { throw e
+            } catch (e: Exception) { _currencyEditor.value = SaveState(error = e.message ?: context.getString(R.string.currency_save_error)) }
+        }
     }
 }

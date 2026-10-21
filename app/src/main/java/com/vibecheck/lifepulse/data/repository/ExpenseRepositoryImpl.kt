@@ -24,6 +24,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import com.vibecheck.lifepulse.core.Money
 
 @Singleton
 class ExpenseRepositoryImpl @Inject constructor(
@@ -33,6 +35,14 @@ class ExpenseRepositoryImpl @Inject constructor(
     private val database: LifePulseDatabase,
     @ApplicationContext private val context: Context
 ) : ExpenseRepository {
+    private val currencyStore = FinanceCurrencyStore(context, database)
+    override fun observeCurrencySettings() = combine(database.financeSettingsDao().observe(),
+        database.financeSettingsDao().observeHasFinancialData()) { settings, hasData ->
+        settings?.let { com.vibecheck.lifepulse.domain.model.CurrencySettings(it.currencyCode, it.confirmed,
+            requiresOriginalCurrency = !it.confirmed && hasData) }
+    }
+    override suspend fun initializeCurrency() { currencyStore.initialize() }
+    override suspend fun setCurrency(code: String) = currencyStore.select(code)
 
     override fun observeTransactions(): Flow<List<Expense>> =
         expenseDao.observeAllTransactions().map { rows -> rows.map(ExpenseWithCategory::toDomain) }
@@ -41,11 +51,14 @@ class ExpenseRepositoryImpl @Inject constructor(
         rows.map { Account(it.id, it.name, it.openingMinor) }
     }
 
-    override suspend fun saveAccount(id: Long, name: String, openingMinor: Long): Long {
+    override suspend fun saveAccount(id: Long, name: String, openingMinor: Long, currencyCode: String?): Long = database.withTransaction {
+        if (currencyCode != null) require(database.financeSettingsDao().get()?.let { it.confirmed && it.currencyCode == currencyCode } == true) {
+            context.getString(R.string.error_currency_changed)
+        }
         require(name.isNotBlank()) { context.getString(R.string.error_account_name_required) }
         require(name.trim().length <= 50) { context.getString(R.string.error_account_name_length) }
         val entity = AccountEntity(id, name.trim(), openingMinor)
-        return if (id == 0L) accountDao.insert(entity) else {
+        if (id == 0L) accountDao.insert(entity) else {
             require(accountDao.get(id) != null) { context.getString(R.string.error_account_missing) }
             accountDao.update(entity)
             id
@@ -53,6 +66,9 @@ class ExpenseRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveTransaction(draft: TransactionDraft): Long = database.withTransaction {
+        if (draft.currencyCode != null) require(database.financeSettingsDao().get()?.let { it.confirmed && it.currencyCode == draft.currencyCode } == true) {
+            context.getString(R.string.error_currency_changed)
+        }
         require(draft.amountMinor in 1..100_000_000_000_000L) { context.getString(R.string.error_amount_invalid) }
         require(accountDao.get(draft.accountId) != null) { context.getString(R.string.error_account_required) }
         val existing = if (draft.id != 0L) expenseDao.get(draft.id) else null
@@ -100,7 +116,9 @@ class ExpenseRepositoryImpl @Inject constructor(
     }
 
     override fun observeTotalInRange(start: Long, end: Long): Flow<Double> =
-        expenseDao.observeTotalInRange(start, end)
+        combine(expenseDao.observeTotalInRange(start, end), observeCurrencySettings()) { total, settings ->
+            Money.decimal(total, settings?.code ?: Money.currencyCode).toDouble()
+        }
 
     override fun observeExpensesInRange(start: Long, end: Long): Flow<List<Expense>> =
         expenseDao.observeExpensesInRange(start, end).map { it.map(ExpenseWithCategory::toDomain) }
@@ -109,8 +127,9 @@ class ExpenseRepositoryImpl @Inject constructor(
         expenseDao.observeRecentExpenses(limit).map { it.map(ExpenseWithCategory::toDomain) }
 
     override fun observeTotalsByCategory(start: Long, end: Long): Flow<List<CategorySpending>> =
-        expenseDao.observeTotalsByCategory(start, end).map { rows ->
-            rows.map { CategorySpending(it.categoryId, it.categoryName, it.colorHex, it.total) }
+        combine(expenseDao.observeTotalsByCategory(start, end), observeCurrencySettings()) { rows, settings ->
+            rows.map { CategorySpending(it.categoryId, it.categoryName, it.colorHex,
+                Money.decimal(it.total, settings?.code ?: Money.currencyCode).toDouble()) }
         }
 
     override fun observeCategories(): Flow<List<Category>> =

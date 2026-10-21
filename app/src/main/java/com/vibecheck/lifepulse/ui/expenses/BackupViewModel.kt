@@ -28,6 +28,13 @@ class BackupViewModel @Inject constructor(
     private val _state = MutableStateFlow(BackupUiState())
     val state = _state.asStateFlow()
     val pendingRestore = savedStateHandle.getStateFlow<String?>("backup_restore_uri", null)
+    val pendingLegacyRestore = savedStateHandle.getStateFlow<String?>("backup_legacy_restore_uri", null)
+    fun clearLegacyRestore() { savedStateHandle["backup_legacy_restore_uri"] = null }
+    fun restoreLegacy(code: String) {
+        val uri = pendingLegacyRestore.value ?: return
+        clearLegacyRestore()
+        run(BackupOperation.RESTORE, Uri.parse(uri), code)
+    }
 
     fun selectRestore(uri: Uri?) { if (_state.value.operation == null) savedStateHandle["backup_restore_uri"] = uri?.toString() }
     fun clearMessage() { _state.value = _state.value.copy(message = null, restored = false) }
@@ -39,14 +46,14 @@ class BackupViewModel @Inject constructor(
         run(BackupOperation.RESTORE, Uri.parse(uri))
     }
 
-    fun run(operation: BackupOperation, uri: Uri) {
+    fun run(operation: BackupOperation, uri: Uri, legacyCurrency: String? = null) {
         if (_state.value.operation != null) return
         _state.value = BackupUiState(operation = operation)
         viewModelScope.launch {
             try {
                 when (operation) {
                     BackupOperation.BACKUP -> repository.saveBackup(uri)
-                    BackupOperation.RESTORE -> repository.restoreBackup(uri)
+                    BackupOperation.RESTORE -> repository.restoreBackup(uri, legacyCurrency)
                     BackupOperation.CSV -> repository.saveCsv(uri)
                 }
                 val message = when (operation) {
@@ -57,6 +64,11 @@ class BackupViewModel @Inject constructor(
                 _state.value = BackupUiState(message = context.getString(message), restored = operation == BackupOperation.RESTORE)
             } catch (e: CancellationException) { throw e
             } catch (e: Exception) {
+                if (e is InvalidBackupException && e.messageRes == R.string.backup_error_legacy_currency) {
+                    savedStateHandle["backup_legacy_restore_uri"] = uri.toString()
+                    _state.value = BackupUiState()
+                    return@launch
+                }
                 val message = if (e is InvalidBackupException) {
                     context.getString(R.string.backup_invalid, context.getString(e.messageRes, *e.formatArgs))
                 } else context.getString(if (operation == BackupOperation.RESTORE) R.string.backup_restore_error else R.string.backup_write_error)

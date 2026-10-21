@@ -9,6 +9,7 @@ enum class TransactionType {
 }
 
 data class Account(val id: Long, val name: String, val openingMinor: Long)
+data class CurrencySettings(val code: String?, val confirmed: Boolean, val requiresOriginalCurrency: Boolean = false)
 data class TransactionDraft(
     val id: Long = 0,
     val type: TransactionType = TransactionType.EXPENSE,
@@ -19,5 +20,6 @@ data class TransactionDraft(
     val dateTimestamp: Long = System.currentTimeMillis(),
     val note: String = "",
     val person: String = "",
-    val loanId: Long? = null
+    val loanId: Long? = null,
+    val currencyCode: String? = null
 )

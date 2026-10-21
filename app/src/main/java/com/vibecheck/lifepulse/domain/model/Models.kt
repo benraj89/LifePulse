@@ -51,9 +51,7 @@ data class Expense(
     val toAccountId: Long? = null,
     val person: String = "",
     val loanId: Long? = null
-) {
-    val amount: Double get() = amountMinor / 100.0
-}
+)
 
 data class CategorySpending(
     val categoryId: Long,

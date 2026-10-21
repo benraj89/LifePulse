@@ -8,6 +8,10 @@ import kotlinx.coroutines.ensureActive
 /** Keyset pages keep snapshots and restores bounded regardless of ledger size. */
 @Dao
 abstract class BackupDao {
+    @Query("SELECT * FROM finance_settings WHERE id = 1")
+    abstract suspend fun settings(): FinanceSettingsEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun saveSettings(settings: FinanceSettingsEntity)
     @Query("SELECT * FROM accounts WHERE id > :after ORDER BY id LIMIT :size")
     abstract suspend fun accounts(after: Long, size: Int): List<AccountEntity>
 
@@ -69,6 +73,7 @@ abstract class BackupDao {
         source.forEachAccountPage { insertAccounts(it) }
         source.forEachCategoryPage { insertCategories(it) }
         source.forEachTransactionPage { insertTransactions(it) }
+        source.settings()?.let { saveSettings(it) }
         currentCoroutineContext().ensureActive()
     }
 }

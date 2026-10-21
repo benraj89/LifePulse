@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import com.vibecheck.lifepulse.ui.navigation.LifePulseNavHost
+import com.vibecheck.lifepulse.ui.expenses.CurrencyGate
 import com.vibecheck.lifepulse.ui.neobrutalism.NeoBrutalismTheme
 import com.vibecheck.lifepulse.worker.ReminderSyncWorker
 import dagger.hilt.android.AndroidEntryPoint
@@ -36,7 +37,7 @@ class MainActivity : ComponentActivity() {
         requestExactAlarmPermissionIfNeeded()
         setContent {
             NeoBrutalismTheme {
-                LifePulseNavHost(modifier = Modifier.fillMaxSize())
+                CurrencyGate { LifePulseNavHost(modifier = Modifier.fillMaxSize()) }
             }
         }
     }

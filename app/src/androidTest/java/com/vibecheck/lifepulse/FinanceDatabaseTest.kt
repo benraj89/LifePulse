@@ -32,6 +32,7 @@ class FinanceDatabaseTest {
 
     @Before fun setup() = runBlocking {
         database = Room.inMemoryDatabaseBuilder(context, LifePulseDatabase::class.java).build()
+        database.financeSettingsDao().save(com.vibecheck.lifepulse.data.local.entity.FinanceSettingsEntity(currencyCode = "USD", confirmed = true))
         repository = ExpenseRepositoryImpl(database.expenseDao(), database.categoryDao(), database.accountDao(), database, context)
         database.accountDao().insert(AccountEntity(1, "Cash"))
         database.accountDao().insert(AccountEntity(2, "Bank"))
@@ -123,7 +124,7 @@ class FinanceDatabaseTest {
         }
         helper.close()
         val upgraded = Room.databaseBuilder(context, LifePulseDatabase::class.java, name)
-            .addMigrations(DatabaseModule.MIGRATION_4_5).build()
+            .addMigrations(DatabaseModule.MIGRATION_4_5, DatabaseModule.MIGRATION_5_6).build()
         try {
             val repo = ExpenseRepositoryImpl(upgraded.expenseDao(), upgraded.categoryDao(), upgraded.accountDao(), upgraded, context)
             val record = repo.observeTransactions().first().single()

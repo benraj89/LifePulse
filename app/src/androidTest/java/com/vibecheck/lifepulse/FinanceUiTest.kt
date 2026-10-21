@@ -2,6 +2,8 @@ package com.vibecheck.lifepulse
 
 import android.content.Context
 import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.SavedStateHandle
+import com.vibecheck.lifepulse.data.backup.FinanceBackupRepository
 import androidx.room.Room
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -30,6 +32,8 @@ class FinanceUiTest {
     @Before fun setup() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         database = Room.inMemoryDatabaseBuilder(context, LifePulseDatabase::class.java).build()
+        database.financeSettingsDao().save(FinanceSettingsEntity(currencyCode = "USD", confirmed = true))
+        com.vibecheck.lifepulse.core.Money.currencyCode = "USD"
         repository = ExpenseRepositoryImpl(database.expenseDao(), database.categoryDao(), database.accountDao(), database, context)
         database.accountDao().insert(AccountEntity(1, "Cash", 10000))
         database.accountDao().insert(AccountEntity(2, "Bank", 0))
@@ -38,7 +42,9 @@ class FinanceUiTest {
         expenseId = repository.saveTransaction(TransactionDraft(amountMinor = 1234, accountId = 1, categoryId = category, note = "Lunch"))
         viewModel = ExpenseViewModel(repository, context)
         store.put("finance", viewModel)
-        compose.setContent { NeoBrutalismTheme { ExpenseScreen(viewModel = viewModel) } }
+        val backupViewModel = BackupViewModel(FinanceBackupRepository(context, database), SavedStateHandle(), context)
+        store.put("backup", backupViewModel)
+        compose.setContent { NeoBrutalismTheme { ExpenseScreen(viewModel = viewModel, backupViewModel = backupViewModel) } }
         compose.waitUntil(5000) { compose.onAllNodesWithText("Your entries").fetchSemanticsNodes().isNotEmpty() }
     }
     @After fun cleanup() { store.clear(); database.close() }

@@ -8,12 +8,13 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.vibecheck.lifepulse.data.local.LifePulseDatabase
 import com.vibecheck.lifepulse.data.local.dao.BACKUP_PAGE_SIZE
+import com.vibecheck.lifepulse.core.Money
+import com.vibecheck.lifepulse.data.repository.FinanceCurrencyStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.*
-import java.math.BigDecimal
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -35,10 +36,10 @@ class FinanceBackupRepository @Inject constructor(
         }
     }
 
-    suspend fun restoreBackup(uri: Uri) = withContext(Dispatchers.IO) {
+    suspend fun restoreBackup(uri: Uri, legacyCurrency: String? = null) = withContext(Dispatchers.IO) {
         operationLock.withLock {
             val input = context.contentResolver.openInputStream(uri) ?: throw IOException("Could not open the backup.")
-            input.buffered().use { restore(it) }
+            input.buffered().use { restore(it, legacyCurrency) }
         }
     }
 
@@ -59,6 +60,7 @@ class FinanceBackupRepository @Inject constructor(
     }
 
     private suspend fun withBackupFile(block: suspend (File) -> Unit) {
+        FinanceCurrencyStore(context, database).initialize()
         withTempFile(".payload") { payload ->
             val timestamp = Instant.now().toString()
             payload.outputStream().buffered().use { output ->
@@ -83,10 +85,10 @@ class FinanceBackupRepository @Inject constructor(
         }
     }
 
-    internal suspend fun restore(input: InputStream) = withContext(Dispatchers.IO) {
+    internal suspend fun restore(input: InputStream, legacyCurrency: String? = null) = withContext(Dispatchers.IO) {
         withStagingDatabase { stage ->
             try {
-                stage.backupDao().readSnapshot { BackupFormat.readInto(input, it) }
+                stage.backupDao().readSnapshot { BackupFormat.readInto(input, it, legacyCurrency) }
             } catch (e: CancellationException) { throw e
             } catch (e: InvalidBackupException) { throw e
             } catch (e: Exception) {
@@ -94,14 +96,18 @@ class FinanceBackupRepository @Inject constructor(
             }
             currentCoroutineContext().ensureActive()
             database.backupDao().replaceFinance(stage.backupDao())
+            database.financeSettingsDao().get()?.currencyCode?.let { Money.currencyCode = it }
         }
     }
 
     internal suspend fun writeCsv(output: OutputStream) = withContext(Dispatchers.IO) {
+        FinanceCurrencyStore(context, database).initialize()
         val writer = output.writer(Charsets.UTF_8).buffered()
         // BOM helps Excel recognize non-ASCII contact/category names. RFC 4180 line endings.
-        writer.write("\uFEFFDateTime (UTC),Type,Amount,Category,Account,ToAccount,Contact,Note\r\n")
+        writer.write("\uFEFFDateTime (UTC),Type,Amount,Currency,Category,Account,ToAccount,Contact,Note\r\n")
         database.backupDao().readSnapshot { dao ->
+            val currency = dao.settings()?.takeIf { it.confirmed }?.currencyCode
+                ?: throw InvalidBackupException(R.string.error_currency_required)
             var after = 0L
             while (true) {
                 currentCoroutineContext().ensureActive()
@@ -110,7 +116,7 @@ class FinanceBackupRepository @Inject constructor(
                 for (row in rows) {
                     val fields = listOf(
                         CsvFormat.date(row.dateTimestamp), row.type,
-                        BigDecimal.valueOf(row.amountMinor, 2).toPlainString(),
+                        Money.decimal(row.amountMinor, currency), currency,
                         row.category, row.account, row.toAccount, row.contact, row.note
                     )
                     writer.write(fields.mapIndexed { index, value -> CsvFormat.cell(value, protectFormula = index >= 3) }.joinToString(","))

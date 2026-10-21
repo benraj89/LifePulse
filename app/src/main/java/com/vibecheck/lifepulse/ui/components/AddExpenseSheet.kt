@@ -106,7 +106,7 @@ fun AddExpenseSheet(
             NeoTextField(
                 value = amountText,
                 onValueChange = { input ->
-                    if (!saving && (input.isEmpty() || input.matches(Regex("^\\d{0,12}\\.?\\d{0,2}$")))) {
+                    if (!saving && Money.acceptsInput(input)) {
                         amountText = input
                     }
                 },

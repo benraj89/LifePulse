@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatter
 fun BackupActions(snackbar: SnackbarHostState, onRestored: () -> Unit, viewModel: BackupViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val pendingRestore by viewModel.pendingRestore.collectAsStateWithLifecycle()
+    val pendingLegacyRestore by viewModel.pendingLegacyRestore.collectAsStateWithLifecycle()
     var showMenu by rememberSaveable { mutableStateOf(false) }
     val backupPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) {
         it?.let { uri -> viewModel.run(BackupOperation.BACKUP, uri) }
@@ -74,6 +75,13 @@ fun BackupActions(snackbar: SnackbarHostState, onRestored: () -> Unit, viewModel
     if (pendingRestore != null) NeoConfirmDialog(
         stringResource(R.string.backup_restore_confirm_title), stringResource(R.string.backup_restore_confirm_message),
         stringResource(R.string.backup_restore_confirm_button), { viewModel.selectRestore(null) }, viewModel::confirmRestore)
+
+    if (pendingLegacyRestore != null) ModalBottomSheet(onDismissRequest = viewModel::clearLegacyRestore,
+        containerColor = NeoColors.PaleCyan, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        CurrencyPicker(null, viewModel::restoreLegacy, Modifier.fillMaxHeight(0.9f),
+            onDismiss = viewModel::clearLegacyRestore, allowedCodes = com.vibecheck.lifepulse.data.backup.BackupFormat.LEGACY_CURRENCIES,
+            legacyBackup = true)
+    }
 
     state.operation?.let { operation ->
         Dialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)) {

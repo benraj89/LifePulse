@@ -33,6 +33,7 @@ fun TransactionSheet(
     defaultAccountId: Long? = null, defaultType: TransactionType = TransactionType.EXPENSE,
     onDelete: (() -> Unit)? = null
 ) {
+    val entryCurrency = remember { Money.currencyCode }
     val startingType = initial?.type ?: repayLoan?.let {
         if (it.type == TransactionType.LEND) TransactionType.REPAYMENT_RECEIVED else TransactionType.REPAYMENT_PAID
     } ?: defaultType
@@ -42,7 +43,7 @@ fun TransactionSheet(
     val canChooseType = initial == null && repayLoan == null && startingType in entryTypes
     val canChooseLoan = initial == null && repayLoan == null && startingType.isLoan
     var amountText by rememberSaveable { mutableStateOf(
-        initial?.let { Money.input(it.amountMinor) } ?: if (repayLoan != null) Money.input(remainingMinor) else ""
+        initial?.let { Money.input(it.amountMinor, entryCurrency) } ?: if (repayLoan != null) Money.input(remainingMinor, entryCurrency) else ""
     ) }
     var accountId by rememberSaveable { mutableStateOf(initial?.accountId ?: repayLoan?.accountId ?: defaultAccountId ?: accounts.firstOrNull()?.id) }
     var destinationId by rememberSaveable { mutableStateOf(initial?.toAccountId) }
@@ -70,7 +71,7 @@ fun TransactionSheet(
         if (accounts.none { it.id == accountId }) accountId = accounts.firstOrNull()?.id
     }
     LaunchedEffect(state.saved) { if (state.saved) onDismiss() }
-    val amount = Money.parse(amountText)
+    val amount = Money.parse(amountText, entryCurrency)
     val valid = amount != null && amount > 0 && accountId != null &&
         (!type.needsCategory || categoryId != null) && (!type.isLoan || person.isNotBlank()) &&
         (type != TransactionType.TRANSFER || (destinationId != null && destinationId != accountId))
@@ -104,9 +105,9 @@ fun TransactionSheet(
                 if (repayLoan != null) Text(stringResource(R.string.repayment_outstanding_hint, Money.format(remainingMinor)),
                     color = NeoColors.OnSurface, style = NeoTypography.bodyMedium)
             }
-            Text(stringResource(R.string.transaction_amount_currency, Money.currencyCode), style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
-            NeoTextField(amountText, { if (!state.saving && it.matches(Regex("^\\d{0,12}(\\.\\d{0,2})?$"))) amountText = it },
-                placeholder = stringResource(R.string.amount_placeholder), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+            Text(stringResource(R.string.transaction_amount_currency, entryCurrency), style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
+            NeoTextField(amountText, { if (!state.saving && Money.acceptsInput(it, code = entryCurrency)) amountText = it },
+                placeholder = Money.input(0, entryCurrency), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                 backgroundColor = NeoColors.PaleCyan, modifier = Modifier.fillMaxWidth(), textStyle = NeoTypography.headlineMedium)
             if (type.isLoan) {
                 Text(if (type == TransactionType.LEND) stringResource(R.string.loan_lend_person) else stringResource(R.string.loan_borrow_person),
@@ -158,7 +159,7 @@ fun TransactionSheet(
                     id = initial?.id ?: 0, type = type, amountMinor = amount!!, accountId = accountId!!,
                     toAccountId = if (type == TransactionType.TRANSFER) destinationId else null,
                     categoryId = if (type.needsCategory) categoryId else null, dateTimestamp = timestamp,
-                    note = note, person = person, loanId = initial?.loanId ?: repayLoan?.id
+                    note = note, person = person, loanId = initial?.loanId ?: repayLoan?.id, currencyCode = entryCurrency
                 ))
             }, Modifier.fillMaxWidth(), enabled = valid && !state.saving,
                 backgroundColor = NeoColors.Coral, contentColor = NeoColors.OnSurface)
@@ -174,8 +175,8 @@ fun TransactionSheet(
 @Composable
 fun AccountSheet(account: Account?, state: SaveState, onDismiss: () -> Unit, onSave: (Long, String, Long) -> Unit) {
     var name by rememberSaveable { mutableStateOf(account?.name ?: "") }
-    var opening by rememberSaveable { mutableStateOf(account?.let { Money.input(it.openingMinor) } ?: "0.00") }
-    val openingMinor = Money.parse(opening.removePrefix("-"))?.let { if (opening.startsWith("-")) -it else it }
+    var opening by rememberSaveable { mutableStateOf(Money.input(account?.openingMinor ?: 0)) }
+    val openingMinor = Money.parse(opening, allowNegative = true)
     LaunchedEffect(state.saved) { if (state.saved) onDismiss() }
     ModalBottomSheet(onDismissRequest = { if (!state.saving) onDismiss() }, containerColor = NeoColors.PaleCyan,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
@@ -185,7 +186,7 @@ fun AccountSheet(account: Account?, state: SaveState, onDismiss: () -> Unit, onS
             Text(stringResource(R.string.account_name_hint), style = NeoTypography.bodyMedium, color = NeoColors.OnSurface)
             NeoTextField(name, { if (!state.saving) name = it }, placeholder = stringResource(R.string.account_name), modifier = Modifier.fillMaxWidth())
             Text(stringResource(R.string.account_opening_currency, Money.currencyCode), style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
-            NeoTextField(opening, { if (!state.saving && it.matches(Regex("^-?\\d{0,12}(\\.\\d{0,2})?$"))) opening = it },
+            NeoTextField(opening, { if (!state.saving && Money.acceptsInput(it, allowNegative = true)) opening = it },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done), modifier = Modifier.fillMaxWidth())
             Text(stringResource(R.string.account_opening_hint),
                 style = NeoTypography.bodyMedium, color = NeoColors.OnSurface)

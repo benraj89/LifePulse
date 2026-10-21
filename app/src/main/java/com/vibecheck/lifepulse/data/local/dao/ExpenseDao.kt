@@ -33,11 +33,11 @@ interface ExpenseDao {
     /** Total spend inside an arbitrary range (e.g. start-of-today .. end-of-today). */
     @Query(
         """
-        SELECT IFNULL(SUM(amountMinor), 0) / 100.0 FROM expenses
+        SELECT IFNULL(SUM(amountMinor), 0) FROM expenses
         WHERE type = 'EXPENSE' AND dateTimestamp BETWEEN :start AND :end
         """
     )
-    fun observeTotalInRange(start: Long, end: Long): Flow<Double>
+    fun observeTotalInRange(start: Long, end: Long): Flow<Long>
 
     @Transaction
     @Query(
@@ -67,7 +67,7 @@ interface ExpenseDao {
     @Query(
         """
         SELECT c.id AS categoryId, c.name AS categoryName, c.colorHex AS colorHex,
-               SUM(e.amountMinor) / 100.0 AS total
+               SUM(e.amountMinor) AS total
         FROM expenses e
         INNER JOIN categories c ON c.id = e.categoryId
         WHERE e.type = 'EXPENSE' AND e.dateTimestamp BETWEEN :start AND :end

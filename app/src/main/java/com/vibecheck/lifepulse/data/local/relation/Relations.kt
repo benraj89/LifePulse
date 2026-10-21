@@ -21,6 +21,6 @@ data class CategoryTotal(
     val categoryId: Long,
     val categoryName: String,
     val colorHex: String,
-    val total: Double
+    val total: Long
 )
 
