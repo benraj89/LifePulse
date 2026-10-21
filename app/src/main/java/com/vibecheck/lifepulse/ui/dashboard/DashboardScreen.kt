@@ -1,5 +1,9 @@
 ﻿package com.vibecheck.lifepulse.ui.dashboard
 
+import com.vibecheck.lifepulse.R
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -65,31 +69,31 @@ internal fun DashboardContent(state: DashboardUiState, modifier: Modifier = Modi
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f)) {
-                    Text("LifePulse", style = NeoTypography.headlineMedium, color = NeoColors.OnSurface)
+                    Text(stringResource(R.string.dashboard_title), style = NeoTypography.headlineMedium, color = NeoColors.OnSurface)
                     Text(state.date.format(DateTimeFormatter.ofPattern("EEE, dd MMM")), style = NeoTypography.bodySmall,
                         color = NeoColors.OnSurface)
                 }
-                NeoButton("Add entry", onAddEntry, enabled = !state.isLoading && state.accounts.isNotEmpty(),
+                NeoButton(stringResource(R.string.transaction_add), onAddEntry, enabled = !state.isLoading && state.accounts.isNotEmpty(),
                     backgroundColor = NeoColors.Coral, contentColor = NeoColors.OnSurface, shape = RoundedCornerShape(4.dp),
                     shadowOffset = 3.dp, horizontalPadding = 12.dp, verticalPadding = 8.dp,
                     leadingIcon = { Icon(Icons.Default.Add, null, Modifier.size(16.dp)) })
             }
         }
         if (state.isLoading) {
-            item { Text("Loading your overview…", style = NeoTypography.bodyMedium) }
+            item { Text(stringResource(R.string.dashboard_loading), style = NeoTypography.bodyMedium) }
         } else {
             item { TodayCard(state, onHabits, onMoney) }
             item { MoneyOverview(state, onMoney) }
-            item { SectionHeader("Your habits", onHabits) }
+            item { SectionHeader(stringResource(R.string.dashboard_your_habits), onHabits) }
             if (state.habits.isEmpty()) {
-                item { DashboardEmpty("Start a habit", "Build a routine with a daily, weekly, or monthly habit.", onHabits) }
+                item { DashboardEmpty(stringResource(R.string.dashboard_start_habit), stringResource(R.string.dashboard_start_habit_hint), onHabits) }
             } else {
                 val habits = state.habits.sortedBy { it.completedToday }.take(4)
                 items(habits, key = { "habit_${it.id}" }) { habit -> HabitQuickRow(habit, { onToggleHabit(habit.id) }) }
             }
-            item { SectionHeader("Recent spending", onMoney) }
+            item { SectionHeader(stringResource(R.string.dashboard_recent_spending), onMoney) }
             if (state.recentExpenses.isEmpty()) {
-                item { DashboardEmpty("No spending yet", "Tap Add entry to record your first expense.", onAddEntry) }
+                item { DashboardEmpty(stringResource(R.string.dashboard_no_spending), stringResource(R.string.dashboard_no_spending_hint), onAddEntry) }
             } else {
                 items(state.recentExpenses, key = { "expense_${it.id}" }) { ExpenseRow(it, state.accounts, onMoney) }
             }
@@ -99,24 +103,24 @@ internal fun DashboardContent(state: DashboardUiState, modifier: Modifier = Modi
 
 @Composable
 private fun TodayCard(state: DashboardUiState, onHabits: () -> Unit, onMoney: () -> Unit) {
-    DashboardCard("TODAY", NeoColors.Yellow) {
+    DashboardCard(stringResource(R.string.dashboard_today), NeoColors.Yellow) {
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
             Column(Modifier.weight(1f).fillMaxHeight().clickable(onClick = onHabits).padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Habit progress", style = NeoTypography.labelSmall, fontWeight = FontWeight.Black)
-                Text(state.habitProgressLabel, style = NeoTypography.titleLarge, fontWeight = FontWeight.Black)
+                Text(stringResource(R.string.dashboard_habit_progress), style = NeoTypography.labelSmall, fontWeight = FontWeight.Black)
+                Text(stringResource(R.string.dashboard_habit_progress_done, state.completedHabits, state.totalHabits), style = NeoTypography.titleLarge, fontWeight = FontWeight.Black)
                 Box(Modifier.fillMaxWidth().height(8.dp).background(NeoColors.Surface).border(2.dp, NeoColors.Border)) {
                     if (state.habitProgressFraction > 0) Box(Modifier.fillMaxWidth(state.habitProgressFraction.coerceIn(0f, 1f))
                         .fillMaxHeight().background(NeoColors.Ink))
                 }
                 Text(when {
-                    state.totalHabits == 0 -> "Ready when you are"
-                    state.completedHabits == state.totalHabits -> "All done for now!"
-                    else -> "${state.totalHabits - state.completedHabits} still to do"
+                    state.totalHabits == 0 -> stringResource(R.string.dashboard_ready)
+                    state.completedHabits == state.totalHabits -> stringResource(R.string.dashboard_all_done)
+                    else -> stringResource(R.string.dashboard_habits_remaining, state.totalHabits - state.completedHabits)
                 }, style = NeoTypography.bodySmall)
             }
             Box(Modifier.width(3.dp).fillMaxHeight().background(NeoColors.Border))
-            OverviewStat("Spent today", state.spentToday,
+            OverviewStat(stringResource(R.string.dashboard_spent_today), state.spentToday,
                 Modifier.weight(1f).fillMaxHeight().background(NeoColors.Surface).clickable(onClick = onMoney))
         }
     }
@@ -124,20 +128,20 @@ private fun TodayCard(state: DashboardUiState, onHabits: () -> Unit, onMoney: ()
 
 @Composable
 private fun MoneyOverview(state: DashboardUiState, onMoney: () -> Unit) {
-    DashboardCard("YOUR MONEY · ${state.date.format(DateTimeFormatter.ofPattern("MMM")).uppercase()}", NeoColors.Surface, onMoney) {
+    DashboardCard(stringResource(R.string.dashboard_money_month, state.date.format(DateTimeFormatter.ofPattern("MMM")).uppercase()), NeoColors.Surface, onMoney) {
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            OverviewStat("Account balance", state.accountBalance, Modifier.weight(1f).fillMaxHeight().background(NeoColors.MintGreen))
+            OverviewStat(stringResource(R.string.dashboard_account_balance), state.accountBalance, Modifier.weight(1f).fillMaxHeight().background(NeoColors.MintGreen))
             Box(Modifier.width(3.dp).fillMaxHeight().background(NeoColors.Border))
-            OverviewStat("Month's spending", state.spentThisMonth, Modifier.weight(1f).fillMaxHeight().background(NeoColors.Yellow))
+            OverviewStat(stringResource(R.string.dashboard_month_spending), state.spentThisMonth, Modifier.weight(1f).fillMaxHeight().background(NeoColors.Yellow))
         }
         HorizontalDivider(thickness = 3.dp, color = NeoColors.Border)
-        OverviewStat("Month's income", state.incomeThisMonth, Modifier.fillMaxWidth(), inline = true)
+        OverviewStat(stringResource(R.string.dashboard_month_income), state.incomeThisMonth, Modifier.fillMaxWidth(), inline = true)
         if (state.owedToYou > 0 || state.owedByYou > 0) {
             HorizontalDivider(thickness = 3.dp, color = NeoColors.Border)
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                OverviewStat("People owe you", state.owedToYou, Modifier.weight(1f).fillMaxHeight().background(NeoColors.Cyan))
+                OverviewStat(stringResource(R.string.dashboard_people_owe_you), state.owedToYou, Modifier.weight(1f).fillMaxHeight().background(NeoColors.Cyan))
                 Box(Modifier.width(3.dp).fillMaxHeight().background(NeoColors.Border))
-                OverviewStat("You owe people", state.owedByYou, Modifier.weight(1f).fillMaxHeight())
+                OverviewStat(stringResource(R.string.dashboard_you_owe_people), state.owedByYou, Modifier.weight(1f).fillMaxHeight())
             }
         }
     }
@@ -176,7 +180,7 @@ private fun OverviewStat(label: String, amount: Long, modifier: Modifier, inline
 private fun SectionHeader(title: String, onAction: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(title, style = NeoTypography.titleMedium, modifier = Modifier.weight(1f), color = NeoColors.OnSurface)
-        TextButton(onClick = onAction) { Text("See all", style = NeoTypography.labelLarge, color = NeoColors.OnSurface) }
+        TextButton(onClick = onAction) { Text(stringResource(R.string.action_see_all), style = NeoTypography.labelLarge, color = NeoColors.OnSurface) }
     }
 }
 
@@ -199,18 +203,19 @@ private fun HabitQuickRow(habit: Habit, onToggle: () -> Unit) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(habit.title, style = NeoTypography.titleMedium)
                 val period = when (habit.frequency) {
-                    HabitFrequency.DAILY -> "Today"
-                    HabitFrequency.WEEKLY -> "This week"
-                    HabitFrequency.MONTHLY -> "This month"
+                    HabitFrequency.DAILY -> stringResource(R.string.expense_today_label)
+                    HabitFrequency.WEEKLY -> stringResource(R.string.habit_this_week)
+                    HabitFrequency.MONTHLY -> stringResource(R.string.expense_this_month_label)
                 }
-                val unit = when (habit.frequency) {
-                    HabitFrequency.DAILY -> "day"
-                    HabitFrequency.WEEKLY -> "week"
-                    HabitFrequency.MONTHLY -> "month"
+                val streakRes = when (habit.frequency) {
+                    HabitFrequency.DAILY -> R.string.habit_day_streak
+                    HabitFrequency.WEEKLY -> R.string.habit_week_streak
+                    HabitFrequency.MONTHLY -> R.string.habit_month_streak
                 }
-                Text("$period · ${if (habit.completedToday) "Done" else "To do"}" +
-                    (if (habit.currentStreak > 0) " · ${habit.currentStreak} $unit streak" else ""),
-                    style = NeoTypography.bodySmall)
+                val status = stringResource(if (habit.completedToday) R.string.action_done else R.string.habit_to_do)
+                val periodStatus = stringResource(R.string.habit_period_status, period, status)
+                Text(if (habit.currentStreak > 0) stringResource(R.string.habit_status_streak, periodStatus,
+                    stringResource(streakRes, habit.currentStreak)) else periodStatus, style = NeoTypography.bodySmall)
             }
         }
     }

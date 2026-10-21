@@ -326,4 +326,135 @@
     <string name="backup_invalid_fallback">Invalid backup file.</string>
     <string name="backup_restore_error">Restore failed. Your financial data was not replaced. Check the file and available storage, then try again.</string>
     <string name="backup_write_error">Could not finish saving. Check available storage and try again. Any incomplete file can be deleted.</string>
+
+    <!-- Dashboard overview and spending insights -->
+    <string name="dashboard_loading">Loading your overview…</string>
+    <string name="dashboard_your_habits">Your habits</string>
+    <string name="dashboard_start_habit">Start a habit</string>
+    <string name="dashboard_start_habit_hint">Build a routine with a daily, weekly, or monthly habit.</string>
+    <string name="dashboard_recent_spending">Recent spending</string>
+    <string name="dashboard_no_spending">No spending yet</string>
+    <string name="dashboard_no_spending_hint">Tap Add entry to record your first expense.</string>
+    <string name="dashboard_today">TODAY</string>
+    <string name="dashboard_habit_progress">Habit progress</string>
+    <string name="dashboard_ready">Ready when you are</string>
+    <string name="dashboard_all_done">All done for now!</string>
+    <string name="dashboard_spent_today">Spent today</string>
+    <string name="dashboard_account_balance">Account balance</string>
+    <string name="dashboard_month_spending">Month\'s spending</string>
+    <string name="dashboard_month_income">Month\'s income</string>
+    <string name="dashboard_people_owe_you">People owe you</string>
+    <string name="dashboard_you_owe_people">You owe people</string>
+    <string name="habit_this_week">This week</string>
+    <string name="insights_title">Spending insights</string>
+    <string name="insights_back">Back to spending</string>
+    <string name="insights_month">MONTH</string>
+    <string name="insights_compare_with">COMPARE WITH</string>
+    <string name="insights_match_days">Compare the same number of days</string>
+    <string name="insights_match_days_hint">Turn off to compare full available months</string>
+    <string name="insights_loading">Loading your insights…</string>
+    <string name="insights_expenses_only">Spending charts include expenses only. Transfers, lending, borrowing, and repayments are excluded.</string>
+    <string name="insights_big_picture">01 / THE BIG PICTURE</string>
+    <string name="insights_same_month">Same month selected</string>
+    <string name="insights_no_spending_either">No spending in either period</string>
+    <string name="insights_no_comparison_spending">No spending in the comparison period</string>
+    <string name="insights_spending_unchanged">Spending stayed the same</string>
+    <string name="insights_daily_average">Daily average</string>
+    <string name="insights_income_minus_spending">Income − spending</string>
+    <string name="insights_categories_heading">02 / WHERE IT WENT</string>
+    <string name="insights_empty_month">No expenses for this month</string>
+    <string name="insights_empty_month_hint">Pick another month or add an expense to see your category chart.</string>
+    <string name="insights_spending_label">SPENDING</string>
+    <string name="insights_highlight_hint">Tap a category to highlight it</string>
+    <string name="insights_hide_breakdown">Hide full breakdown</string>
+    <string name="insights_trend_heading">03 / SIX-MONTH TREND</string>
+    <string name="insights_empty_trend">No spending in these six months</string>
+    <string name="insights_trend_hint">Tap a bar to explore that month. The current month includes spending so far.</string>
+    <string name="insights_changes_heading">04 / WHAT CHANGED?</string>
+    <string name="insights_empty_changes">Your category changes will appear here.</string>
+    <string name="insights_no_change">No change</string>
+    <string name="insights_new">New</string>
+    <string name="insights_biggest_changes">Showing the five biggest changes</string>
+    <string name="dashboard_habit_progress_done">%1$d/%2$d done</string>
+    <string name="dashboard_habits_remaining">%1$d still to do</string>
+    <string name="dashboard_money_month">YOUR MONEY · %1$s</string>
+    <string name="habit_to_do">To do</string>
+    <string name="habit_day_streak">%1$d day streak</string>
+    <string name="habit_week_streak">%1$d week streak</string>
+    <string name="habit_month_streak">%1$d month streak</string>
+    <string name="habit_period_status">%1$s · %2$s</string>
+    <string name="habit_status_streak">%1$s · %2$s</string>
+    <string name="error_update_habit">Couldn\'t update habit. Please try again.</string>
+    <string name="insights_spent_month">Spent in %1$s</string>
+    <string name="insights_spent_through_day">Spent in %1$s · through day %2$d</string>
+    <string name="insights_change_more">%1$.1f%% more · %2$s</string>
+    <string name="insights_change_less">%1$.1f%% less · %2$s</string>
+    <string name="insights_no_elapsed_days">%1$s · no elapsed days</string>
+    <string name="insights_day_range">%1$s · 1–%2$d</string>
+    <string name="insights_category_chart_description">Spending by category. Exact values are listed below.</string>
+    <string name="insights_percent_whole">%1$d%%</string>
+    <string name="insights_percent_decimal">%1$.1f%%</string>
+    <string name="insights_other_categories">Other categories</string>
+    <string name="insights_highest_month">Highest month: %1$s</string>
+    <string name="insights_month_spending_description">%1$s, %2$s spent</string>
+    <string name="insights_comparison_periods">%1$s vs %2$s · same periods as above</string>
+    <string name="insights_amount_change">%1$s → %2$s</string>
+    <plurals name="insights_category_count">
+        <item quantity="one">%1$d category</item>
+        <item quantity="other">%1$d categories</item>
+    </plurals>
+    <plurals name="insights_all_categories">
+        <item quantity="one">All %1$d category</item>
+        <item quantity="other">All %1$d categories</item>
+    </plurals>
+
+    <!-- Backup validation errors -->
+    <string name="backup_error_version">This backup version is not supported.</string>
+    <string name="backup_error_timestamp">Invalid backup timestamp.</string>
+    <string name="backup_error_checksum">Invalid backup checksum.</string>
+    <string name="backup_error_account_required">The backup must contain an account.</string>
+    <string name="backup_error_contact_missing">Missing contact.</string>
+    <string name="backup_error_contacts_mismatch">Contacts do not match the transactions.</string>
+    <string name="backup_error_trailing_content">Unexpected content after backup.</string>
+    <string name="backup_error_checksum_failed">Backup checksum failed. The file is damaged or has been modified.</string>
+    <string name="backup_error_relationships">Invalid category or loan relationships.</string>
+    <string name="backup_error_record_limit">Backup contains too many records.</string>
+    <string name="backup_error_account_name">Invalid account name.</string>
+    <string name="backup_error_category_name">Invalid category name.</string>
+    <string name="backup_error_category_color">Invalid category color.</string>
+    <string name="backup_error_category_type">Invalid category type.</string>
+    <string name="backup_error_amount">Invalid transaction amount.</string>
+    <string name="backup_error_date">Invalid transaction date.</string>
+    <string name="backup_error_transaction_type">Invalid transaction type.</string>
+    <string name="backup_error_category_reference">Invalid category reference.</string>
+    <string name="backup_error_transfer_accounts">Invalid transfer accounts.</string>
+    <string name="backup_error_loan_reference">Invalid loan reference.</string>
+    <string name="backup_error_loan_contact">Missing loan contact.</string>
+    <string name="backup_error_unexpected_contact">Unexpected transaction contact.</string>
+    <string name="backup_error_expected_integer">Expected an integer.</string>
+    <string name="backup_error_integer">Invalid integer.</string>
+    <string name="backup_error_integer_range">Integer out of range.</string>
+    <string name="backup_error_record_id">Invalid record ID.</string>
+    <string name="backup_error_expected_text">Expected text.</string>
+    <string name="backup_error_text">Invalid or oversized text field.</string>
+    <string name="backup_error_size">Backup exceeds the 512 MB limit.</string>
+    <string name="backup_error_structure_size">Backup structure or text is too large.</string>
+    <string name="backup_error_unreadable">The backup is unreadable or contains invalid data.</string>
+    <string name="backup_error_structure">Invalid backup structure: expected %1$s.</string>
+    <!-- Seed names are stored and matched by name; keep their identities stable across locales. -->
+    <string name="default_account_cash" translatable="false">Cash</string>
+    <string name="default_category_food" translatable="false">Food</string>
+    <string name="default_category_transport" translatable="false">Transport</string>
+    <string name="default_category_groceries" translatable="false">Groceries</string>
+    <string name="default_category_bills" translatable="false">Bills</string>
+    <string name="default_category_health" translatable="false">Health</string>
+    <string name="default_category_entertainment" translatable="false">Entertainment</string>
+    <string name="default_category_other" translatable="false">Other</string>
+    <string-array name="default_income_categories" translatable="false">
+        <item>Salary</item>
+        <item>Freelance</item>
+        <item>Interest</item>
+        <item>Gifts</item>
+        <item>Other income</item>
+    </string-array>
 </resources>

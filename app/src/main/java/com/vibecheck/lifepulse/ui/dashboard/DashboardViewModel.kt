@@ -1,5 +1,8 @@
 package com.vibecheck.lifepulse.ui.dashboard
 
+import android.content.Context
+import com.vibecheck.lifepulse.R
+import dagger.hilt.android.qualifiers.ApplicationContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vibecheck.lifepulse.core.DateUtils
@@ -48,7 +51,6 @@ data class DashboardUiState(
     val accounts: List<Account> = emptyList(),
     val isLoading: Boolean = true
 ) {
-    val habitProgressLabel: String get() = "$completedHabits/$totalHabits done"
     val habitProgressFraction: Float
         get() = if (totalHabits == 0) 0f else completedHabits.toFloat() / totalHabits
 }
@@ -78,7 +80,8 @@ internal fun dashboardState(today: LocalDate, habits: List<Habit>, transactions:
 @OptIn(ExperimentalCoroutinesApi::class)
 class DashboardViewModel @Inject constructor(
     private val habitRepository: HabitRepository,
-    private val expenseRepository: ExpenseRepository
+    private val expenseRepository: ExpenseRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _expenseSave = MutableStateFlow(SaveState())
@@ -110,7 +113,7 @@ class DashboardViewModel @Inject constructor(
         if (!togglingHabits.add(habitId)) return@launch
         try { habitRepository.toggleHabit(habitId, LocalDate.now())
         } catch (e: CancellationException) { throw e
-        } catch (e: Exception) { _message.value = e.message ?: "Couldn't update habit. Please try again."
+        } catch (e: Exception) { _message.value = e.message ?: context.getString(R.string.error_update_habit)
         } finally { togglingHabits.remove(habitId) }
     }
 
@@ -122,7 +125,7 @@ class DashboardViewModel @Inject constructor(
                 expenseRepository.saveTransaction(draft)
                 _expenseSave.value = SaveState(saved = true)
             } catch (e: CancellationException) { throw e
-            } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: "Couldn't save. Please try again.") }
+            } catch (e: Exception) { _expenseSave.value = SaveState(error = e.message ?: context.getString(R.string.error_save_retry)) }
         }
     }
 
@@ -130,13 +133,13 @@ class DashboardViewModel @Inject constructor(
         try { expenseRepository.addCategory(name, colorHex, kind)
             _expenseSave.value = _expenseSave.value.copy(error = null)
         } catch (e: CancellationException) { throw e
-        } catch (e: Exception) { _expenseSave.value = _expenseSave.value.copy(error = e.message ?: "Couldn't add category.") }
+        } catch (e: Exception) { _expenseSave.value = _expenseSave.value.copy(error = e.message ?: context.getString(R.string.error_add_category)) }
     }
 
     fun deleteCategory(id: Long) = writeScope.launch {
         try { expenseRepository.deleteCategory(id)
         } catch (e: CancellationException) { throw e
-        } catch (e: Exception) { _expenseSave.value = _expenseSave.value.copy(error = e.message ?: "Couldn't delete category.") }
+        } catch (e: Exception) { _expenseSave.value = _expenseSave.value.copy(error = e.message ?: context.getString(R.string.error_delete_category)) }
     }
 }
 

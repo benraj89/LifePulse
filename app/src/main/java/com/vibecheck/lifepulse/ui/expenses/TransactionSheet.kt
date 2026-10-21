@@ -61,9 +61,10 @@ fun TransactionSheet(
             list + Category(initial.categoryId, initial.categoryName, initial.categoryColorHex, kind = type)
         } else list
     }
-    LaunchedEffect(availableCategories, type) {
+    val defaultCategoryName = stringResource(R.string.default_category_other)
+    LaunchedEffect(availableCategories, type, defaultCategoryName) {
         if (availableCategories.none { it.id == categoryId }) categoryId =
-            availableCategories.firstOrNull { it.name.equals("Other", ignoreCase = true) }?.id ?: availableCategories.firstOrNull()?.id
+            availableCategories.firstOrNull { it.name.equals(defaultCategoryName, ignoreCase = true) }?.id ?: availableCategories.firstOrNull()?.id
     }
     LaunchedEffect(accounts) {
         if (accounts.none { it.id == accountId }) accountId = accounts.firstOrNull()?.id

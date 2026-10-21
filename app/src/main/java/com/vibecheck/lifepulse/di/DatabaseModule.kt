@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.vibecheck.lifepulse.R
 import com.vibecheck.lifepulse.data.local.DefaultCategories
 import com.vibecheck.lifepulse.data.local.LifePulseDatabase
 import com.vibecheck.lifepulse.data.local.dao.CategoryDao
@@ -52,10 +53,10 @@ object DatabaseModule {
      * survive the upgrade. Any pre-existing category whose name matches one of the built-in
      * defaults is retroactively flagged as isDefault = 1.
      */
-    private val MIGRATION_1_2 = object : Migration(1, 2) {
+    private fun migration1To2(context: Context) = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE categories ADD COLUMN isDefault INTEGER NOT NULL DEFAULT 0")
-            DefaultCategories.ALL.forEach { (name, _) ->
+            DefaultCategories.all(context).forEach { (name, _) ->
                 db.execSQL(
                     "UPDATE categories SET isDefault = 1 WHERE name = ? COLLATE NOCASE",
                     arrayOf(name)
@@ -96,10 +97,11 @@ object DatabaseModule {
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    db.execSQL("INSERT OR IGNORE INTO accounts (id, name, openingMinor) VALUES (1, 'Cash', 0)")
+                    db.execSQL("INSERT OR IGNORE INTO accounts (id, name, openingMinor) VALUES (1, ?, 0)",
+                        arrayOf(context.getString(R.string.default_account_cash)))
                     // Seed a few default expense categories on first launch. These are flagged
                     // isDefault = 1 so the UI can prevent the user from deleting them.
-                    DefaultCategories.ALL.forEach { (name, color) ->
+                    DefaultCategories.all(context).forEach { (name, color) ->
                         db.execSQL(
                             "INSERT OR IGNORE INTO categories (name, colorHex, isDefault) VALUES (?, ?, 1)",
                             arrayOf(name, color)
@@ -107,7 +109,7 @@ object DatabaseModule {
                     }
                 }
             })
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(migration1To2(context), MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
 
     @Provides

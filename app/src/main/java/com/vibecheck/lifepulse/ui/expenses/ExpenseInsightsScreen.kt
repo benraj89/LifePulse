@@ -1,5 +1,9 @@
 package com.vibecheck.lifepulse.ui.expenses
 
+import com.vibecheck.lifepulse.R
+
+import androidx.compose.ui.res.stringResource
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -21,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -35,12 +40,14 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private val chartColors = listOf(NeoColors.Yellow, NeoColors.Cyan, NeoColors.Coral, NeoColors.Lime, NeoColors.LightViolet, NeoColors.BubblegumPink)
 private fun YearMonth.label() = format(DateTimeFormatter.ofPattern("MMM yyyy"))
+
+@Composable
+private fun CategoryInsight.displayName() = if (isOther) stringResource(R.string.insights_other_categories) else name
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,35 +67,35 @@ internal fun ExpenseInsightsScreen(state: ExpenseUiState, onMonth: (YearMonth) -
     }
     BackHandler(onBack = onBack)
     Scaffold(containerColor = NeoColors.Background, contentWindowInsets = WindowInsets(0), topBar = {
-        TopAppBar(title = { Text("Spending insights", style = NeoTypography.titleLarge) },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back to spending", Modifier.size(20.dp)) } },
+        TopAppBar(title = { Text(stringResource(R.string.insights_title), style = NeoTypography.titleLarge) },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.insights_back), Modifier.size(20.dp)) } },
             windowInsets = WindowInsets(0), colors = TopAppBarDefaults.topAppBarColors(containerColor = NeoColors.Background))
     }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("spending_insights"),
             contentPadding = PaddingValues(16.dp, 8.dp, 20.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MonthControl("MONTH", state.selectedMonth, NeoColors.Yellow, Modifier.weight(1f)) { calendar = "month" }
-                    MonthControl("COMPARE WITH", comparedMonth, NeoColors.Cyan, Modifier.weight(1f)) { calendar = "compare" }
+                    MonthControl(stringResource(R.string.insights_month), state.selectedMonth, NeoColors.Yellow, Modifier.weight(1f)) { calendar = "month" }
+                    MonthControl(stringResource(R.string.insights_compare_with), comparedMonth, NeoColors.Cyan, Modifier.weight(1f)) { calendar = "compare" }
                 }
-                if (state.accounts.size > 1) NeoInlineChoice("Account",
-                    listOf("all" to "All accounts") + state.accounts.map { it.id.toString() to it.name },
+                if (state.accounts.size > 1) NeoInlineChoice(stringResource(R.string.account_label),
+                    listOf("all" to stringResource(R.string.finance_all_accounts)) + state.accounts.map { it.id.toString() to it.name },
                     state.selectedAccountId?.toString() ?: "all", { onAccount(it.toLongOrNull()) }, Modifier.testTag("insights_account"))
                 Row(Modifier.fillMaxWidth().clickable { matchDays = !matchDays }, verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(matchDays, { matchDays = it }, colors = CheckboxDefaults.colors(checkedColor = NeoColors.Ink, checkmarkColor = NeoColors.Lime))
                     Column(Modifier.weight(1f)) {
-                        Text("Compare the same number of days", style = NeoTypography.labelSmall, fontWeight = FontWeight.Black)
-                        Text("Turn off to compare full available months", style = NeoTypography.bodySmall)
+                        Text(stringResource(R.string.insights_match_days), style = NeoTypography.labelSmall, fontWeight = FontWeight.Black)
+                        Text(stringResource(R.string.insights_match_days_hint), style = NeoTypography.bodySmall)
                     }
                 }
             }
-            if (state.isLoading || data == null) item { Text("Loading your insights…") }
+            if (state.isLoading || data == null) item { Text(stringResource(R.string.insights_loading)) }
             else data?.let { insights ->
                 item { ComparisonCard(insights) }
                 item { CategoryChart(insights) }
                 item { TrendChart(insights, onMonth) }
                 item { CategoryChanges(insights) }
-                item { Text("Spending charts include expenses only. Transfers, lending, borrowing, and repayments are excluded.", style = NeoTypography.bodySmall) }
+                item { Text(stringResource(R.string.insights_expenses_only), style = NeoTypography.bodySmall) }
             }
         }
     }
@@ -124,16 +131,18 @@ private fun InsightCard(title: String, color: Color = NeoColors.Surface, content
 
 @Composable
 private fun ComparisonCard(data: SpendingInsights) {
-    InsightCard("01 / THE BIG PICTURE", NeoColors.Yellow) {
+    InsightCard(stringResource(R.string.insights_big_picture), NeoColors.Yellow) {
         Text(Money.format(data.spent), style = NeoTypography.headlineMedium, fontWeight = FontWeight.Black)
-        Text("Spent in ${data.month.label()}${if (data.days in 1 until data.month.lengthOfMonth()) " · through day ${data.days}" else ""}", style = NeoTypography.bodySmall)
+        Text(if (data.days in 1 until data.month.lengthOfMonth()) stringResource(R.string.insights_spent_through_day, data.month.label(), data.days)
+            else stringResource(R.string.insights_spent_month, data.month.label()), style = NeoTypography.bodySmall)
         val difference = data.comparisonSpent - data.previousSpent
         val change = when {
-            data.month == data.comparedMonth -> "Same month selected"
-            data.previousSpent == 0L && data.comparisonSpent == 0L -> "No spending in either period"
-            data.previousSpent == 0L -> "No spending in the comparison period"
-            difference == 0L -> "Spending stayed the same"
-            else -> "${String.format(Locale.getDefault(), "%.1f", abs(data.changePercent!!))}% ${if (difference > 0) "more" else "less"} · ${Money.format(abs(difference))}"
+            data.month == data.comparedMonth -> stringResource(R.string.insights_same_month)
+            data.previousSpent == 0L && data.comparisonSpent == 0L -> stringResource(R.string.insights_no_spending_either)
+            data.previousSpent == 0L -> stringResource(R.string.insights_no_comparison_spending)
+            difference == 0L -> stringResource(R.string.insights_spending_unchanged)
+            else -> stringResource(if (difference > 0) R.string.insights_change_more else R.string.insights_change_less,
+                abs(data.changePercent!!), Money.format(abs(difference)))
         }
         Text(change, style = NeoTypography.labelLarge, fontWeight = FontWeight.Black,
             modifier = Modifier.background(if (difference > 0) NeoColors.Coral else NeoColors.MintGreen)
@@ -143,12 +152,12 @@ private fun ComparisonCard(data: SpendingInsights) {
         ComparisonBar(data.comparedMonth, data.comparedDays, data.previousSpent, maximum, NeoColors.Cyan)
         HorizontalDivider(thickness = 2.dp, color = NeoColors.Border)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SmallStat("Daily average", Money.format(data.averagePerDay), Modifier.weight(1f))
-            SmallStat("Expenses", data.count.toString(), Modifier.weight(1f))
+            SmallStat(stringResource(R.string.insights_daily_average), Money.format(data.averagePerDay), Modifier.weight(1f))
+            SmallStat(stringResource(R.string.expense_title), data.count.toString(), Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SmallStat("Income", Money.format(data.income), Modifier.weight(1f))
-            SmallStat("Income − spending", Money.format(data.income - data.spent), Modifier.weight(1f))
+            SmallStat(stringResource(R.string.transaction_type_income), Money.format(data.income), Modifier.weight(1f))
+            SmallStat(stringResource(R.string.insights_income_minus_spending), Money.format(data.income - data.spent), Modifier.weight(1f))
         }
     }
 }
@@ -165,7 +174,8 @@ private fun SmallStat(label: String, value: String, modifier: Modifier) {
 private fun ComparisonBar(month: YearMonth, days: Int, amount: Long, maximum: Long, color: Color) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("${month.label()} · ${if (days == 0) "no elapsed days" else "1–$days"}", style = NeoTypography.bodySmall, modifier = Modifier.weight(1f))
+            Text(if (days == 0) stringResource(R.string.insights_no_elapsed_days, month.label()) else stringResource(R.string.insights_day_range, month.label(), days),
+                style = NeoTypography.bodySmall, modifier = Modifier.weight(1f))
             Text(Money.format(amount), style = NeoTypography.labelSmall, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
         }
         Box(Modifier.fillMaxWidth().height(14.dp).background(NeoColors.Surface).border(2.dp, NeoColors.Border)) {
@@ -180,14 +190,15 @@ internal fun CategoryChart(data: SpendingInsights) {
     var showAll by rememberSaveable(data.month.toString()) { mutableStateOf(false) }
     val slices = data.slices
     val active = slices.firstOrNull { it.key == selectedKey }
-    InsightCard("02 / WHERE IT WENT") {
+    InsightCard(stringResource(R.string.insights_categories_heading)) {
         if (data.spent == 0L) {
-            Text("No expenses for this month", style = NeoTypography.titleMedium)
-            Text("Pick another month or add an expense to see your category chart.", style = NeoTypography.bodySmall)
+            Text(stringResource(R.string.insights_empty_month), style = NeoTypography.titleMedium)
+            Text(stringResource(R.string.insights_empty_month_hint), style = NeoTypography.bodySmall)
         } else {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(210.dp), contentAlignment = Alignment.Center) {
-                    Canvas(Modifier.fillMaxSize().semantics { contentDescription = "Spending by category. Exact values are listed below." }) {
+                    val chartDescription = stringResource(R.string.insights_category_chart_description)
+                    Canvas(Modifier.fillMaxSize().semantics { contentDescription = chartDescription }) {
                         val diameter = size.minDimension - 12.dp.toPx()
                         val origin = Offset(4.dp.toPx(), 4.dp.toPx())
                         drawCircle(NeoColors.Ink, diameter / 2, center = Offset(size.width / 2 + 3.dp.toPx(), size.height / 2 + 3.dp.toPx()))
@@ -204,14 +215,14 @@ internal fun CategoryChart(data: SpendingInsights) {
                         drawCircle(NeoColors.Ink, diameter * 0.31f, center, style = Stroke(3.dp.toPx()))
                     }
                     Column(Modifier.width(115.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(if (active == null) "SPENDING" else "${(active.amount.toDouble() / data.spent * 100).roundToInt()}%",
+                        Text(if (active == null) stringResource(R.string.insights_spending_label) else stringResource(R.string.insights_percent_whole, (active.amount.toDouble() / data.spent * 100).roundToInt()),
                             style = NeoTypography.labelSmall, fontWeight = FontWeight.Black)
-                        Text(if (active == null) "${data.categories.size} categories" else active.name,
+                        Text(if (active == null) pluralStringResource(R.plurals.insights_category_count, data.categories.size, data.categories.size) else active.displayName(),
                             style = NeoTypography.labelLarge, fontWeight = FontWeight.Black, textAlign = TextAlign.Center, maxLines = 2)
                     }
                 }
             }
-            Text("Tap a category to highlight it", style = NeoTypography.bodySmall)
+            Text(stringResource(R.string.insights_highlight_hint), style = NeoTypography.bodySmall)
             slices.forEachIndexed { index, slice ->
                 Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("insight_slice_${slice.key}")
                     .semantics { selected = selectedKey == slice.key }
@@ -219,15 +230,15 @@ internal fun CategoryChart(data: SpendingInsights) {
                     .clickable { selectedKey = if (selectedKey == slice.key) null else slice.key }.padding(4.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.size(14.dp).background(chartColors[index % chartColors.size]).border(2.dp, NeoColors.Border))
-                    Text(slice.name, style = NeoTypography.bodySmall, modifier = Modifier.weight(1f))
+                    Text(slice.displayName(), style = NeoTypography.bodySmall, modifier = Modifier.weight(1f))
                     Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(max = 160.dp)) {
                         Text(Money.format(slice.amount), style = NeoTypography.labelLarge, fontWeight = FontWeight.Black)
-                        Text("${String.format(Locale.getDefault(), "%.1f", slice.amount.toDouble() / data.spent * 100)}%", style = NeoTypography.bodySmall)
+                        Text(stringResource(R.string.insights_percent_decimal, slice.amount.toDouble() / data.spent * 100), style = NeoTypography.bodySmall)
                     }
                 }
             }
             if (data.categories.size > 6) {
-                TextButton(onClick = { showAll = !showAll }) { Text(if (showAll) "Hide full breakdown" else "All ${data.categories.size} categories", color = NeoColors.OnSurface) }
+                TextButton(onClick = { showAll = !showAll }) { Text(if (showAll) stringResource(R.string.insights_hide_breakdown) else pluralStringResource(R.plurals.insights_all_categories, data.categories.size, data.categories.size), color = NeoColors.OnSurface) }
                 if (showAll) data.categories.forEach { category ->
                     SmallStat(category.name, Money.format(category.amount), Modifier.fillMaxWidth())
                 }
@@ -238,15 +249,16 @@ internal fun CategoryChart(data: SpendingInsights) {
 
 @Composable
 internal fun TrendChart(data: SpendingInsights, onMonth: (YearMonth) -> Unit) {
-    InsightCard("03 / SIX-MONTH TREND") {
+    InsightCard(stringResource(R.string.insights_trend_heading)) {
         val maximum = data.trend.maxOfOrNull { it.amount }?.coerceAtLeast(1L) ?: 1L
-        Text(if (data.trend.all { it.amount == 0L }) "No spending in these six months" else "Highest month: ${Money.format(maximum)}",
+        Text(if (data.trend.all { it.amount == 0L }) stringResource(R.string.insights_empty_trend) else stringResource(R.string.insights_highest_month, Money.format(maximum)),
             style = NeoTypography.bodySmall)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
             data.trend.forEach { point ->
                 val isSelected = point.month == data.month
+                val monthDescription = stringResource(R.string.insights_month_spending_description, point.month.label(), Money.format(point.amount))
                 Column(Modifier.weight(1f).testTag("insight_month_${point.month}")
-                    .semantics { contentDescription = "${point.month.label()}, ${Money.format(point.amount)} spent"; selected = isSelected }
+                    .semantics { contentDescription = monthDescription; selected = isSelected }
                     .clickable { onMonth(point.month) }, horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(Modifier.fillMaxWidth().height(135.dp), contentAlignment = Alignment.BottomCenter) {
                         if (point.amount > 0) Box(Modifier.fillMaxWidth().padding(horizontal = 3.dp)
@@ -261,31 +273,31 @@ internal fun TrendChart(data: SpendingInsights, onMonth: (YearMonth) -> Unit) {
                 }
             }
         }
-        Text("Tap a bar to explore that month. The current month includes spending so far.", style = NeoTypography.bodySmall)
+        Text(stringResource(R.string.insights_trend_hint), style = NeoTypography.bodySmall)
     }
 }
 
 @Composable
 private fun CategoryChanges(data: SpendingInsights) {
-    InsightCard("04 / WHAT CHANGED?") {
-        Text("${data.month.label()} vs ${data.comparedMonth.label()} · same periods as above", style = NeoTypography.bodySmall)
-        if (data.changes.isEmpty()) Text("Your category changes will appear here.", style = NeoTypography.bodySmall)
+    InsightCard(stringResource(R.string.insights_changes_heading)) {
+        Text(stringResource(R.string.insights_comparison_periods, data.month.label(), data.comparedMonth.label()), style = NeoTypography.bodySmall)
+        if (data.changes.isEmpty()) Text(stringResource(R.string.insights_empty_changes), style = NeoTypography.bodySmall)
         data.changes.take(5).forEach { category ->
             val difference = category.amount - category.previous
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(category.name, style = NeoTypography.labelLarge, fontWeight = FontWeight.Black)
-                    Text("${Money.format(category.previous)} → ${Money.format(category.amount)}", style = NeoTypography.bodySmall)
+                    Text(stringResource(R.string.insights_amount_change, Money.format(category.previous), Money.format(category.amount)), style = NeoTypography.bodySmall)
                 }
                 Text(when {
-                    difference == 0L -> "No change"
-                    category.previous == 0L -> "New"
+                    difference == 0L -> stringResource(R.string.insights_no_change)
+                    category.previous == 0L -> stringResource(R.string.insights_new)
                     else -> (if (difference > 0) "+" else "−") + Money.format(abs(difference))
                 }, style = NeoTypography.labelSmall, fontWeight = FontWeight.Black,
                     modifier = Modifier.widthIn(max = 140.dp).background(if (difference > 0) NeoColors.Coral else NeoColors.MintGreen)
                         .border(2.dp, NeoColors.Border).padding(6.dp))
             }
         }
-        if (data.changes.size > 5) Text("Showing the five biggest changes", style = NeoTypography.bodySmall)
+        if (data.changes.size > 5) Text(stringResource(R.string.insights_biggest_changes), style = NeoTypography.bodySmall)
     }
 }

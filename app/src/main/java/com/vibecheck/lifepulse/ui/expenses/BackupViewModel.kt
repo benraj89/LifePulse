@@ -58,7 +58,7 @@ class BackupViewModel @Inject constructor(
             } catch (e: CancellationException) { throw e
             } catch (e: Exception) {
                 val message = if (e is InvalidBackupException) {
-                    context.getString(R.string.backup_invalid, e.message ?: context.getString(R.string.backup_invalid_fallback))
+                    context.getString(R.string.backup_invalid, context.getString(e.messageRes, *e.formatArgs))
                 } else context.getString(if (operation == BackupOperation.RESTORE) R.string.backup_restore_error else R.string.backup_write_error)
                 _state.value = BackupUiState(message = message)
             }

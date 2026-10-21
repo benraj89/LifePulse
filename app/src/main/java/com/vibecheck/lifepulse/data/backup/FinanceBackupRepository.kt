@@ -1,5 +1,7 @@
 package com.vibecheck.lifepulse.data.backup
 
+import com.vibecheck.lifepulse.R
+
 import android.content.Context
 import android.net.Uri
 import androidx.room.Room
@@ -65,7 +67,7 @@ class FinanceBackupRepository @Inject constructor(
                 }
             }
             currentCoroutineContext().ensureActive()
-            if (payload.length() > BackupFormat.MAX_FILE_BYTES - 1024) throw IOException("Backup exceeds the 512 MB limit.")
+            if (payload.length() > BackupFormat.MAX_FILE_BYTES - 1024) throw IOException(context.getString(R.string.backup_error_size))
             val checksum = payload.inputStream().buffered().use(BackupChecksum::sha256)
             withTempFile(".mbak") { file ->
                 file.outputStream().buffered().use { BackupFormat.writeContainer(BackupMetadata(BackupFormat.VERSION, timestamp, checksum), payload, it) }
@@ -88,7 +90,7 @@ class FinanceBackupRepository @Inject constructor(
             } catch (e: CancellationException) { throw e
             } catch (e: InvalidBackupException) { throw e
             } catch (e: Exception) {
-                throw InvalidBackupException("The backup is unreadable or contains invalid data.")
+                throw InvalidBackupException(R.string.backup_error_unreadable)
             }
             currentCoroutineContext().ensureActive()
             database.backupDao().replaceFinance(stage.backupDao())

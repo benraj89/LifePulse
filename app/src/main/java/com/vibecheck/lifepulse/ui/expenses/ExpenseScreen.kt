@@ -18,7 +18,9 @@ import com.vibecheck.lifepulse.core.*
 import com.vibecheck.lifepulse.domain.model.*
 import com.vibecheck.lifepulse.ui.neobrutalism.*
 
-private enum class MoneyPage(val label: String) { SPENDING("Spending"), ACCOUNTS("Accounts"), OWED("Money owed") }
+private enum class MoneyPage(@androidx.annotation.StringRes val labelRes: Int) {
+    SPENDING(R.string.finance_spending_tab), ACCOUNTS(R.string.finance_accounts_tab), OWED(R.string.finance_owed_tab)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +31,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     val message by viewModel.message.collectAsStateWithLifecycle()
     var pageName by rememberSaveable { mutableStateOf(MoneyPage.SPENDING.name) }
     val page = MoneyPage.valueOf(pageName)
-    var activityFilter by rememberSaveable { mutableStateOf("All") }
+    var activityFilter by rememberSaveable { mutableStateOf(EntryFilter.ALL) }
     var editing by remember { mutableStateOf<Expense?>(null) }
     var repaying by remember { mutableStateOf<Expense?>(null) }
     var newType by remember { mutableStateOf(TransactionType.EXPENSE) }
@@ -44,7 +46,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     var currencyTarget by remember { mutableStateOf<String?>(null) }
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(message) { message?.let { snackbar.showSnackbar(it); viewModel.clearMessage() } }
-    LaunchedEffect(editor.saved) { if (editor.saved) activityFilter = "All" }
+    LaunchedEffect(editor.saved) { if (editor.saved) activityFilter = EntryFilter.ALL }
     fun selectPage(next: MoneyPage) { pageName = next.name; viewModel.selectAccount(null) }
     BackHandler(page != MoneyPage.SPENDING) { selectPage(MoneyPage.SPENDING) }
     fun openTransaction(type: TransactionType, transaction: Expense? = null, loan: Expense? = null) {
@@ -75,7 +77,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
             }
         } }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            NeoTextTabs(MoneyPage.entries.map { it.name to it.label }, page.name,
+            NeoTextTabs(MoneyPage.entries.map { it.name to stringResource(it.labelRes) }, page.name,
                 { selectPage(MoneyPage.valueOf(it)) }, Modifier.padding(horizontal = 16.dp))
             key(page) {
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 32.dp),
@@ -107,15 +109,15 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     if (showCalendar) NeoCalendarDialog(state.selectedMonth, viewModel::selectMonth, { showCalendar = false })
     if (showSettings) ModalBottomSheet(onDismissRequest = { showSettings = false }, containerColor = NeoColors.PaleCyan) {
         Column(Modifier.navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Currency", style = NeoTypography.headlineMedium)
-            NeoChoiceField("Used for all accounts", Money.supportedCurrencies.map { it to it }, Money.currencyCode,
+            Text(stringResource(R.string.currency_title), style = NeoTypography.headlineMedium)
+            NeoChoiceField(stringResource(R.string.currency_all_accounts), Money.supportedCurrencies.map { it to it }, Money.currencyCode,
                 { if (it != Money.currencyCode) currencyTarget = it })
-            Text("Changing currency changes the labels. Amounts are not converted.", style = NeoTypography.bodyMedium)
-            NeoButton("Done", { showSettings = false }, Modifier.fillMaxWidth())
+            Text(stringResource(R.string.currency_change_hint), style = NeoTypography.bodyMedium)
+            NeoButton(stringResource(R.string.action_done), { showSettings = false }, Modifier.fillMaxWidth())
         }
     }
-    deleteTarget?.let { target -> NeoConfirmDialog("Delete entry?", "Delete ${Money.format(target.amountMinor)}? This will update your account balance.",
-        "Delete", { deleteTarget = null }, { viewModel.deleteExpense(target.id); deleteTarget = null }) }
-    currencyTarget?.let { code -> NeoConfirmDialog("Use $code?", "Existing amounts will not be converted.",
-        "Change", { currencyTarget = null }, { viewModel.setCurrency(code); currencyTarget = null }) }
+    deleteTarget?.let { target -> NeoConfirmDialog(stringResource(R.string.transaction_delete_title), stringResource(R.string.transaction_delete_message, Money.format(target.amountMinor)),
+        stringResource(R.string.action_delete), { deleteTarget = null }, { viewModel.deleteExpense(target.id); deleteTarget = null }) }
+    currencyTarget?.let { code -> NeoConfirmDialog(stringResource(R.string.currency_confirm_title, code), stringResource(R.string.currency_existing_amounts_hint),
+        stringResource(R.string.action_change), { currencyTarget = null }, { viewModel.setCurrency(code); currencyTarget = null }) }
 }

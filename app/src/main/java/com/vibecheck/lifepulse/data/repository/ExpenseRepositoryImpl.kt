@@ -132,11 +132,11 @@ class ExpenseRepositoryImpl @Inject constructor(
     }
 
     override suspend fun ensureDefaultCategories() {
-        DefaultCategories.ALL.forEach { (name, color) ->
+        DefaultCategories.all(context).forEach { (name, color) ->
             categoryDao.insertCategory(CategoryEntity(name = name, colorHex = color, isDefault = true))
             categoryDao.markAsDefault(name)
         }
-        listOf("Salary", "Freelance", "Interest", "Gifts", "Other income").forEach { name ->
+        context.resources.getStringArray(R.array.default_income_categories).forEach { name ->
             categoryDao.insertCategory(CategoryEntity(name = name, colorHex = "#66BB6A", isDefault = true, kind = "INCOME"))
         }
     }

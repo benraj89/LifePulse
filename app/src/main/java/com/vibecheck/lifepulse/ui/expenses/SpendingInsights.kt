@@ -7,7 +7,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 
-internal data class CategoryInsight(val key: String, val name: String, val amount: Long, val previous: Long = 0)
+internal data class CategoryInsight(val key: String, val name: String, val amount: Long, val previous: Long = 0, val isOther: Boolean = false)
 internal data class MonthInsight(val month: YearMonth, val amount: Long)
 internal data class SpendingInsights(
     val month: YearMonth,
@@ -29,7 +29,7 @@ internal data class SpendingInsights(
 
     // Keep the donut readable; the complete category list remains available below it.
     val slices: List<CategoryInsight> get() = if (categories.size <= 6) categories else
-        categories.take(5) + CategoryInsight("other", "Other categories", categories.drop(5).sumOf { it.amount })
+        categories.take(5) + CategoryInsight("other", "", categories.drop(5).sumOf { it.amount }, isOther = true)
 }
 
 /** Money stays in minor units; floating point is used only to draw ratios and percentages. */
