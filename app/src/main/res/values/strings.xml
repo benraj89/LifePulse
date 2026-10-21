@@ -300,4 +300,30 @@
         <item>Sa</item>
         <item>Su</item>
     </string-array>
+    <string name="backup_menu_title">Backup &amp; export</string>
+    <string name="backup_create_title">Your financial safety net</string>
+    <string name="backup_create_hint">Save all accounts, categories, contacts and transactions, including transfers, loans and repayments.</string>
+    <string name="backup_create_button">Save backup (.mbak)</string>
+    <string name="backup_restore_title">Restore a backup</string>
+    <string name="backup_restore_hint">Bring your finances back from a LifePulse .mbak file. The file is checked before any data is replaced.</string>
+    <string name="backup_restore_button">Open backup (.mbak)</string>
+    <string name="backup_csv_title">Take it to a spreadsheet</string>
+    <string name="backup_csv_hint">Export every transaction to CSV with clear dates in UTC. CSV files are for reporting and cannot be restored.</string>
+    <string name="backup_csv_button">Export spreadsheet (.csv)</string>
+    <string name="backup_privacy_hint">Files contain readable financial data. Save them somewhere you trust.</string>
+    <string name="backup_restore_confirm_title">Replace financial data?</string>
+    <string name="backup_restore_confirm_message">This replaces all current accounts, categories, contacts and transactions with the selected backup. Save a backup first if you want to keep your current data. Habits and your currency setting stay as they are.</string>
+    <string name="backup_restore_confirm_button">Replace &amp; restore</string>
+    <string name="backup_progress_save">Creating your backup…</string>
+    <string name="backup_progress_restore">Checking and restoring…</string>
+    <string name="backup_progress_csv">Exporting transactions…</string>
+    <string name="backup_progress_hint">Please keep LifePulse open until this finishes.</string>
+    <string name="backup_saved">Backup saved.</string>
+    <string name="backup_restored">Backup restored. Your financial data is ready.</string>
+    <string name="backup_csv_saved">CSV exported. Dates are in UTC.</string>
+    <string name="backup_picker_error">Could not open the file picker. Please try again.</string>
+    <string name="backup_invalid">Backup rejected: %1$s Your financial data was not replaced.</string>
+    <string name="backup_invalid_fallback">Invalid backup file.</string>
+    <string name="backup_restore_error">Restore failed. Your financial data was not replaced. Check the file and available storage, then try again.</string>
+    <string name="backup_write_error">Could not finish saving. Check available storage and try again. Any incomplete file can be deleted.</string>
 </resources>

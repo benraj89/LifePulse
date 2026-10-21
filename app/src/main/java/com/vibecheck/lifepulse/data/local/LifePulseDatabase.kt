@@ -29,6 +29,7 @@ abstract class LifePulseDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun accountDao(): AccountDao
+    abstract fun backupDao(): com.vibecheck.lifepulse.data.local.dao.BackupDao
 
     companion object {
         const val NAME = "lifepulse.db"

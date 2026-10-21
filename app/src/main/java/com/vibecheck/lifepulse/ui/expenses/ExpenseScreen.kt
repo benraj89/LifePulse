@@ -1,7 +1,5 @@
 package com.vibecheck.lifepulse.ui.expenses
 
-import com.vibecheck.lifepulse.R
-import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,9 +9,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vibecheck.lifepulse.R
 import com.vibecheck.lifepulse.core.*
 import com.vibecheck.lifepulse.domain.model.*
 import com.vibecheck.lifepulse.ui.neobrutalism.*
@@ -61,8 +61,10 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     }
 
     Scaffold(modifier, containerColor = NeoColors.Background, contentWindowInsets = WindowInsets(0),
-        topBar = { TopAppBar(title = { Text("Your money", style = NeoTypography.headlineMedium) },
-            actions = { NeoButton("Add entry", { openTransaction(if (page == MoneyPage.OWED) TransactionType.LEND else TransactionType.EXPENSE) },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.finance_title), style = NeoTypography.headlineMedium) },
+            actions = {
+                BackupActions(snackbar, onRestored = { viewModel.selectAccount(null) })
+                NeoButton(stringResource(R.string.transaction_add), { openTransaction(if (page == MoneyPage.OWED) TransactionType.LEND else TransactionType.EXPENSE) },
                 Modifier.padding(end = 16.dp), backgroundColor = NeoColors.Coral, contentColor = NeoColors.OnSurface,
                 horizontalPadding = 12.dp, verticalPadding = 8.dp, shadowOffset = 3.dp,
                 leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp)) }) },

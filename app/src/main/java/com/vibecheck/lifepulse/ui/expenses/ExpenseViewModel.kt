@@ -77,7 +77,7 @@ class ExpenseViewModel @Inject constructor(
                 isLoading = false
             )
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExpenseUiState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExpenseUiState())
 
     fun selectMonth(month: YearMonth) { selectedMonth.value = month }
     fun selectAccount(id: Long?) { selectedAccount.value = id }
