@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.lifecycle.ViewModelStore
@@ -62,7 +63,8 @@ class CurrencyGateUiTest {
         compose.onNode(hasSetTextAction()).performTextInput("JPY")
         compose.onNodeWithTag("currency_JPY").performClick()
         compose.onNode(hasSetTextAction()).performImeAction()
-        compose.onNodeWithText("Save currency").performClick()
+        // Invoke the accessible action while Android is moving the footer after IME dismissal.
+        compose.onNodeWithText("Save currency").assertIsEnabled().performSemanticsAction(SemanticsActions.OnClick) { it() }
         compose.waitUntil(5000) { compose.onAllNodesWithTag("financial_content").fetchSemanticsNodes().isNotEmpty() }
         assertEquals("JPY", Money.currencyCode)
         runBlocking { assertEquals(FinanceSettingsEntity(currencyCode = "JPY", confirmed = true), database.financeSettingsDao().get()) }

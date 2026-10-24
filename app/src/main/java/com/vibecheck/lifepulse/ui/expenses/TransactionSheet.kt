@@ -80,10 +80,10 @@ fun TransactionSheet(
         modifier = if (canChooseType || canChooseLoan) Modifier.fillMaxHeight(0.9f) else Modifier,
         onDismissRequest = { if (!state.saving) onDismiss() },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = NeoColors.PastelYellow
+        containerColor = NeoColors.Surface
     ) {
         Column(Modifier.fillMaxWidth().testTag("transaction_editor").weight(1f, fill = false).verticalScroll(rememberScrollState())
-            .navigationBarsPadding().imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            .navigationBarsPadding().imePadding().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth()) {
                 Text(if (initial != null) stringResource(R.string.transaction_edit_format, type.displayLabel().lowercase()) else if (repayLoan != null) stringResource(R.string.repayment_record) else if (canChooseType) stringResource(R.string.transaction_add) else when (type) {
                     TransactionType.TRANSFER -> stringResource(R.string.transaction_transfer_money)
@@ -107,17 +107,17 @@ fun TransactionSheet(
             }
             Text(stringResource(R.string.transaction_amount_currency, entryCurrency), style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
             NeoTextField(amountText, { if (!state.saving && Money.acceptsInput(it, code = entryCurrency)) amountText = it },
-                placeholder = Money.input(0, entryCurrency), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
-                backgroundColor = NeoColors.PaleCyan, modifier = Modifier.fillMaxWidth(), textStyle = NeoTypography.headlineMedium)
+                placeholder = Money.input(0, entryCurrency), label = stringResource(R.string.transaction_amount_currency, entryCurrency), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                backgroundColor = NeoColors.PastelYellow, modifier = Modifier.fillMaxWidth(), textStyle = NeoTypography.headlineLarge)
             if (type.isLoan) {
                 Text(if (type == TransactionType.LEND) stringResource(R.string.loan_lend_person) else stringResource(R.string.loan_borrow_person),
                     style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
                 NeoTextField(person, { if (!state.saving) person = it }, placeholder = stringResource(R.string.loan_person_name),
-                    modifier = Modifier.fillMaxWidth(), backgroundColor = NeoColors.MintGreen)
+                    modifier = Modifier.fillMaxWidth(), backgroundColor = NeoColors.Primary)
                 Text(stringResource(R.string.loan_tracking_hint),
                     style = NeoTypography.bodyMedium, color = NeoColors.OnSurface)
             }
-            NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.Surface, contentPadding = 12.dp) {
+            NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.PaleCyan, contentPadding = 8.dp) {
                 if (type.needsCategory) NeoInlineChoice(stringResource(R.string.add_expense_category_label),
                     availableCategories.map { it.id.toString() to it.name } + ("manage" to stringResource(R.string.category_manage_action)),
                     categoryId?.toString(), { if (it == "manage") manageCategories = true else categoryId = it.toLong() },
@@ -146,7 +146,8 @@ fun TransactionSheet(
                 Text(stringResource(R.string.transaction_transfer_hint), style = NeoTypography.bodySmall, color = NeoColors.OnSurface)
                 if (accounts.size < 2) Text(stringResource(R.string.transaction_second_account_hint), style = NeoTypography.bodyMedium, color = NeoColors.Danger)
             }
-            NeoTextField(note, { if (!state.saving) note = it }, placeholder = stringResource(R.string.add_expense_note_label), singleLine = false,
+            Text(stringResource(R.string.add_expense_note_label), style = NeoTypography.labelLarge)
+            NeoTextField(note, { if (!state.saving) note = it }, label = stringResource(R.string.add_expense_note_label), singleLine = false,
                 modifier = Modifier.fillMaxWidth(), backgroundColor = NeoColors.Surface)
             (localError?.let { stringResource(it) } ?: state.error)?.let { Text(it, color = NeoColors.Danger, style = NeoTypography.bodyMedium) }
             NeoButton(if (state.saving) stringResource(R.string.action_saving) else if (type.isRepayment) stringResource(R.string.repayment_save) else stringResource(R.string.transaction_save_format, type.displayLabel().lowercase()), {
@@ -162,7 +163,7 @@ fun TransactionSheet(
                     note = note, person = person, loanId = initial?.loanId ?: repayLoan?.id, currencyCode = entryCurrency
                 ))
             }, Modifier.fillMaxWidth(), enabled = valid && !state.saving,
-                backgroundColor = NeoColors.Coral, contentColor = NeoColors.OnSurface)
+                backgroundColor = NeoColors.Primary, contentColor = NeoColors.OnSurface)
             if (onDelete != null) TextButton(onClick = onDelete, modifier = Modifier.fillMaxWidth(), enabled = !state.saving) {
                 Text(stringResource(R.string.transaction_delete_format, type.displayLabel().lowercase()), color = NeoColors.Danger)
             }
@@ -178,22 +179,22 @@ fun AccountSheet(account: Account?, state: SaveState, onDismiss: () -> Unit, onS
     var opening by rememberSaveable { mutableStateOf(Money.input(account?.openingMinor ?: 0)) }
     val openingMinor = Money.parse(opening, allowNegative = true)
     LaunchedEffect(state.saved) { if (state.saved) onDismiss() }
-    ModalBottomSheet(onDismissRequest = { if (!state.saving) onDismiss() }, containerColor = NeoColors.PaleCyan,
+    ModalBottomSheet(onDismissRequest = { if (!state.saving) onDismiss() }, containerColor = NeoColors.Surface,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()).imePadding().navigationBarsPadding().padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()).imePadding().navigationBarsPadding().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(if (account == null) stringResource(R.string.account_add) else stringResource(R.string.account_edit), style = NeoTypography.headlineMedium, color = NeoColors.OnSurface)
             Text(stringResource(R.string.account_name_hint), style = NeoTypography.bodyMedium, color = NeoColors.OnSurface)
             NeoTextField(name, { if (!state.saving) name = it }, placeholder = stringResource(R.string.account_name), modifier = Modifier.fillMaxWidth())
             Text(stringResource(R.string.account_opening_currency, Money.currencyCode), style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
             NeoTextField(opening, { if (!state.saving && Money.acceptsInput(it, allowNegative = true)) opening = it },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done), modifier = Modifier.fillMaxWidth())
+                label = stringResource(R.string.account_opening_currency, Money.currencyCode), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done), modifier = Modifier.fillMaxWidth())
             Text(stringResource(R.string.account_opening_hint),
                 style = NeoTypography.bodyMedium, color = NeoColors.OnSurface)
             state.error?.let { Text(it, color = NeoColors.Danger) }
             NeoButton(if (state.saving) stringResource(R.string.action_saving) else stringResource(R.string.account_save), { onSave(account?.id ?: 0, name, openingMinor!!) },
                 Modifier.fillMaxWidth(), enabled = name.isNotBlank() && openingMinor != null && !state.saving,
-                backgroundColor = NeoColors.MintGreen, contentColor = NeoColors.OnSurface)
+                backgroundColor = NeoColors.Primary, contentColor = NeoColors.OnSurface)
         }
     }
 }

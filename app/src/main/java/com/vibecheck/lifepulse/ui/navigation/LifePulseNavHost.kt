@@ -2,7 +2,9 @@ package com.vibecheck.lifepulse.ui.navigation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
@@ -16,8 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -31,6 +36,7 @@ import com.vibecheck.lifepulse.ui.expenses.ExpenseScreen
 import com.vibecheck.lifepulse.ui.habits.HabitScreen
 import com.vibecheck.lifepulse.ui.neobrutalism.NeoColors
 import com.vibecheck.lifepulse.ui.neobrutalism.NeoTypography
+import com.vibecheck.lifepulse.ui.neobrutalism.neoHardShadow
 
 sealed class Destination(val route: String, val labelRes: Int, val icon: ImageVector) {
     data object Dashboard : Destination("dashboard", R.string.nav_dashboard, Icons.Default.Home)
@@ -75,9 +81,10 @@ fun LifePulseNavHost(
         bottomBar = {
             NavigationBar(
                 containerColor = NeoColors.Surface,
-                modifier = Modifier.border(
-                    border = BorderStroke(3.dp, NeoColors.Border)
-                )
+                windowInsets = WindowInsets(0),
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
+                    .height(if (LocalDensity.current.fontScale > 1.3f) 80.dp else 64.dp)
+                    .border(BorderStroke(2.dp, NeoColors.Border))
             ) {
                 Destination.bottomBarItems.forEach { destination ->
                     val label = stringResource(destination.labelRes)
@@ -85,11 +92,19 @@ fun LifePulseNavHost(
                         selected = currentRoute == destination.route,
                         onClick = { navController.navigateToTab(destination.route) },
                         icon = {
-                            Icon(
-                                destination.icon,
-                                contentDescription = label,
-                                tint = NeoColors.OnSurface
-                            )
+                            val selected = currentRoute == destination.route
+                            val shape = RoundedCornerShape(4.dp)
+                            val color = when (destination) {
+                                Destination.Dashboard -> NeoColors.Yellow
+                                Destination.Habits -> NeoColors.Habit
+                                Destination.Expenses -> NeoColors.Expense
+                            }
+                            Box(Modifier.size(46.dp, 28.dp).then(if (selected) Modifier
+                                .neoHardShadow(shape, offsetX = 2.dp, offsetY = 2.dp)
+                                .background(color, shape).border(2.dp, NeoColors.Ink, shape) else Modifier),
+                                contentAlignment = Alignment.Center) {
+                                Icon(destination.icon, label, Modifier.size(20.dp), tint = NeoColors.Ink)
+                            }
                         },
                         label = {
                             Text(
@@ -103,7 +118,7 @@ fun LifePulseNavHost(
                             unselectedIconColor = NeoColors.OnSurface.copy(alpha = 0.5f),
                             selectedTextColor = NeoColors.OnSurface,
                             unselectedTextColor = NeoColors.OnSurface.copy(alpha = 0.5f),
-                            indicatorColor = NeoColors.Primary
+                            indicatorColor = Color.Transparent
                         )
                     )
                 }

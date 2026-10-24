@@ -9,6 +9,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
@@ -44,11 +46,11 @@ fun NeoButton(
     contentColor: Color = NeoColors.OnPrimary,
     borderColor: Color = NeoColors.Border,
     shadowColor: Color = NeoColors.Shadow,
-    shape: Shape = RoundedCornerShape(12.dp),
-    borderWidth: Dp = 3.dp,
-    shadowOffset: Dp = 6.dp,
-    horizontalPadding: Dp = 20.dp,
-    verticalPadding: Dp = 14.dp,
+    shape: Shape = RoundedCornerShape(4.dp),
+    borderWidth: Dp = 2.dp,
+    shadowOffset: Dp = 4.dp,
+    horizontalPadding: Dp = 10.dp,
+    verticalPadding: Dp = 8.dp,
     leadingIcon: (@Composable () -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -56,7 +58,7 @@ fun NeoButton(
 
     // Press-down: button travels toward its shadow, shrinking the visible offset to ~0.
     val pressOffset by animateDpAsState(
-        targetValue = if (isPressed && enabled) shadowOffset else 0.dp,
+        targetValue = if (isPressed && enabled) shadowOffset / 2 else 0.dp,
         animationSpec = tween(durationMillis = 90),
         label = "neoButtonPressOffset"
     )
@@ -64,6 +66,7 @@ fun NeoButton(
 
     Box(
         modifier = modifier
+            .heightIn(min = 48.dp)
             .neoHardShadow(
                 shape = shape,
                 shadowColor = shadowColor,
@@ -80,6 +83,7 @@ fun NeoButton(
                 interactionSource = interactionSource,
                 indication = null,
                 enabled = enabled,
+                role = Role.Button,
                 onClick = onClick
             )
             .semantics { contentDescription = text }
@@ -95,7 +99,7 @@ fun NeoButton(
             }
             androidx.compose.material3.Text(
                 text = text,
-                color = if (enabled) contentColor else NeoColors.Black.copy(alpha = 0.4f),
+                color = if (enabled) contentColor else NeoColors.SecondaryText,
                 style = NeoTypography.labelLarge
             )
         }

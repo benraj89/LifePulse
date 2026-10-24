@@ -113,7 +113,7 @@ fun CategoryDropdown(
     var newName by remember { mutableStateOf("") }
     var selectedSwatch by remember { mutableStateOf(NewCategorySwatches.first()) }
     var pendingName by remember { mutableStateOf<String?>(null) }
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(4.dp)
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
@@ -152,9 +152,9 @@ fun CategoryDropdown(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .neoHardShadow(shape = shape, shadowColor = shadowColor, offsetX = 4.dp, offsetY = 4.dp)
+                    .neoHardShadow(shape = shape, shadowColor = shadowColor, offsetX = 0.dp, offsetY = 0.dp)
                     .background(color = backgroundColor, shape = shape)
-                    .border(width = 3.dp, color = NeoColors.Border, shape = shape)
+                    .border(width = 2.dp, color = NeoColors.Border, shape = shape)
                     .clickable { expanded = !expanded }
                     .padding(horizontal = 14.dp, vertical = 14.dp)
             ) {
@@ -179,7 +179,7 @@ fun CategoryDropdown(
                 containerColor = NeoColors.Surface,
                 shape = shape,
                 modifier = Modifier
-                    .border(width = 3.dp, color = NeoColors.Border, shape = shape)
+                    .border(width = 2.dp, color = NeoColors.Border, shape = shape)
                     .clip(shape)
             ) {
                 categories.forEach { category ->
@@ -337,7 +337,7 @@ fun EmptyState(
         Text(
             text = subtitle,
             style = NeoTypography.bodyMedium,
-            color = NeoColors.OnSurface.copy(alpha = 0.6f)
+            color = NeoColors.SecondaryText
         )
     }
 }

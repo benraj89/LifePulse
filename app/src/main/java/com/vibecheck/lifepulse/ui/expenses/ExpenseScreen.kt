@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -66,25 +67,26 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     }
 
     Scaffold(modifier, containerColor = NeoColors.Background, contentWindowInsets = WindowInsets(0),
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.finance_title), style = NeoTypography.headlineMedium) },
-            actions = {
+        topBar = { NeoPageHeader(stringResource(R.string.finance_title)) {
                 BackupActions(snackbar, onRestored = { viewModel.selectAccount(null) }, viewModel = backupViewModel)
                 NeoButton(stringResource(R.string.transaction_add), { openTransaction(if (page == MoneyPage.OWED) TransactionType.LEND else TransactionType.EXPENSE) },
-                Modifier.padding(end = 16.dp), backgroundColor = NeoColors.Coral, contentColor = NeoColors.OnSurface,
+                backgroundColor = NeoColors.Primary, contentColor = NeoColors.OnSurface,
                 horizontalPadding = 12.dp, verticalPadding = 8.dp, shadowOffset = 3.dp,
-                leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp)) }) },
-            windowInsets = WindowInsets(0), colors = TopAppBarDefaults.topAppBarColors(containerColor = NeoColors.Background)) },
+                leadingIcon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp)) }) } },
         snackbarHost = { SnackbarHost(snackbar) { data ->
             NeoColumnCard(Modifier.padding(16.dp).fillMaxWidth(), backgroundColor = NeoColors.PastelYellow) {
                 Text(data.visuals.message, style = NeoTypography.bodyMedium)
             }
         } }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
+        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = 840.dp).fillMaxSize()) {
             NeoTextTabs(MoneyPage.entries.map { it.name to stringResource(it.labelRes) }, page.name,
-                { selectPage(MoneyPage.valueOf(it)) }, Modifier.padding(horizontal = 16.dp))
-            key(page) {
-                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp, 12.dp, 16.dp, 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                { selectPage(MoneyPage.valueOf(it)) }, Modifier.padding(horizontal = 12.dp))
+            if (state.isLoading) Text(stringResource(com.vibecheck.lifepulse.R.string.finance_loading_entries),
+                modifier = Modifier.padding(16.dp), style = NeoTypography.bodyLarge)
+            else key(page) {
+                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp, 6.dp, 12.dp, 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     when (page) {
                         MoneyPage.SPENDING -> spendingSection(state, activityFilter, { activityFilter = it },
                             { showCalendar = true }, { showInsights = true },
@@ -99,6 +101,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
                 }
             }
         }
+        }
     }
     if (showTransaction) key(editing?.id, repaying?.id, newType) {
         TransactionSheet(state.accounts, state.categories, editor, editing, repaying,
@@ -110,7 +113,7 @@ fun ExpenseScreen(modifier: Modifier = Modifier, viewModel: ExpenseViewModel = h
     }
     if (showAccount) key(editingAccount?.id) { AccountSheet(editingAccount, accountEditor, { showAccount = false }, viewModel::saveAccount) }
     if (showCalendar) NeoCalendarDialog(state.selectedMonth, viewModel::selectMonth, { showCalendar = false })
-    if (showSettings) ModalBottomSheet(onDismissRequest = { if (!currencyEditor.saving) showSettings = false }, containerColor = NeoColors.PaleCyan,
+    if (showSettings) ModalBottomSheet(onDismissRequest = { if (!currencyEditor.saving) showSettings = false }, containerColor = NeoColors.Surface,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         CurrencyPicker(Money.currencyCode, { code -> currencyTarget = code }, Modifier.fillMaxHeight(0.9f),
             locked = state.transactions.isNotEmpty() || state.accounts.any { it.openingMinor != 0L },

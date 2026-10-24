@@ -14,6 +14,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -54,17 +56,17 @@ fun BackupActions(snackbar: SnackbarHostState, onRestored: () -> Unit, viewModel
     }
     fun filename(extension: String): String = "LifePulse-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))}.$extension"
 
-    NeoIconButton(Icons.Default.FolderOpen, stringResource(R.string.backup_menu_title), { showMenu = true },
-        Modifier.padding(end = 12.dp), enabled = state.operation == null, backgroundColor = NeoColors.PastelYellow,
-        size = 48.dp)
+    val backupLabel = stringResource(R.string.backup_menu_title)
+    NeoIconButton(Icons.Default.FolderOpen, backupLabel, { showMenu = true },
+        enabled = state.operation == null, backgroundColor = NeoColors.LightViolet, shadowOffset = 2.dp)
 
     if (showMenu) ModalBottomSheet(onDismissRequest = { showMenu = false }, containerColor = NeoColors.Background,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.backup_menu_title), style = NeoTypography.headlineMedium)
             BackupActionCard(R.string.backup_create_title, R.string.backup_create_hint, R.string.backup_create_button,
-                NeoColors.Lime) { pick { backupPicker.launch(filename("mbak")) } }
+                NeoColors.Primary) { pick { backupPicker.launch(filename("mbak")) } }
             BackupActionCard(R.string.backup_restore_title, R.string.backup_restore_hint, R.string.backup_restore_button,
                 NeoColors.PastelYellow) { pick { restorePicker.launch(arrayOf("*/*")) } }
             BackupActionCard(R.string.backup_csv_title, R.string.backup_csv_hint, R.string.backup_csv_button,
@@ -77,7 +79,7 @@ fun BackupActions(snackbar: SnackbarHostState, onRestored: () -> Unit, viewModel
         stringResource(R.string.backup_restore_confirm_button), { viewModel.selectRestore(null) }, viewModel::confirmRestore)
 
     if (pendingLegacyRestore != null) ModalBottomSheet(onDismissRequest = viewModel::clearLegacyRestore,
-        containerColor = NeoColors.PaleCyan, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        containerColor = NeoColors.Surface, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         CurrencyPicker(null, viewModel::restoreLegacy, Modifier.fillMaxHeight(0.9f),
             onDismiss = viewModel::clearLegacyRestore, allowedCodes = com.vibecheck.lifepulse.data.backup.BackupFormat.LEGACY_CURRENCIES,
             legacyBackup = true)
@@ -86,7 +88,7 @@ fun BackupActions(snackbar: SnackbarHostState, onRestored: () -> Unit, viewModel
     state.operation?.let { operation ->
         Dialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)) {
             NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.PastelYellow) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     CircularProgressIndicator(Modifier.size(28.dp), color = NeoColors.Ink)
                     Text(stringResource(when (operation) {
                         BackupOperation.BACKUP -> R.string.backup_progress_save
@@ -102,9 +104,11 @@ fun BackupActions(snackbar: SnackbarHostState, onRestored: () -> Unit, viewModel
 
 @Composable
 private fun BackupActionCard(title: Int, hint: Int, button: Int, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
-    NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = color) {
+    NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.Surface) {
         Text(stringResource(title), style = NeoTypography.titleMedium)
         Text(stringResource(hint), style = NeoTypography.bodyMedium)
-        NeoButton(stringResource(button), onClick, Modifier.fillMaxWidth(), backgroundColor = NeoColors.Surface)
+        NeoButton(stringResource(button), onClick, Modifier.fillMaxWidth(),
+            backgroundColor = if (color == NeoColors.Primary) NeoColors.Primary else NeoColors.Surface,
+            shadowOffset = if (color == NeoColors.Primary) 4.dp else 0.dp)
     }
 }

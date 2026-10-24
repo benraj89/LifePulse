@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
@@ -38,11 +39,11 @@ fun NeoCard(
     backgroundColor: Color = NeoColors.Surface,
     borderColor: Color = NeoColors.Border,
     shadowColor: Color = NeoColors.Shadow,
-    shape: Shape = RoundedCornerShape(12.dp),
-    borderWidth: Dp = 3.dp,
-    shadowOffsetX: Dp = 6.dp,
-    shadowOffsetY: Dp = 6.dp,
-    contentPadding: Dp = 16.dp,
+    shape: Shape = RoundedCornerShape(8.dp),
+    borderWidth: Dp = 2.dp,
+    shadowOffsetX: Dp = 0.dp,
+    shadowOffsetY: Dp = 0.dp,
+    contentPadding: Dp = 10.dp,
     content: @Composable () -> Unit
 ) {
     Box(
@@ -53,6 +54,7 @@ fun NeoCard(
                 offsetX = shadowOffsetX,
                 offsetY = shadowOffsetY
             )
+            .clip(shape)
             .background(color = backgroundColor, shape = shape)
             .border(width = borderWidth, color = borderColor, shape = shape)
             .padding(contentPadding)
@@ -66,12 +68,12 @@ fun NeoCard(
 fun NeoColumnCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color = NeoColors.Surface,
-    shape: Shape = RoundedCornerShape(12.dp),
-    contentPadding: Dp = 16.dp,
+    shape: Shape = RoundedCornerShape(8.dp),
+    contentPadding: Dp = 10.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     NeoCard(modifier = modifier, backgroundColor = backgroundColor, shape = shape, contentPadding = contentPadding) {
-        androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+        androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
     }
 }
 

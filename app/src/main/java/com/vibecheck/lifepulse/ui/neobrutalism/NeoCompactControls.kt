@@ -17,21 +17,29 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 
-/** A single quiet tab strip; cards and primary actions carry the bold styling. */
+/** Compact comic tabs keep a full 48dp target around the smaller printed tab. */
 @Composable
 fun NeoTextTabs(options: List<Pair<String, String>>, selectedKey: String, onSelect: (String) -> Unit,
                 modifier: Modifier = Modifier, enabled: Boolean = true) {
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
-    Row(modifier.fillMaxWidth().selectableGroup()) {
-        options.forEach { (key, label) ->
-            Column(Modifier.weight(1f).selectable(selectedKey == key, enabled = enabled, role = Role.Tab,
-                onClick = { focus.clearFocus(); keyboard?.hide(); onSelect(key) })) {
-                Text(label, modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp, horizontal = 4.dp),
-                    textAlign = TextAlign.Center, style = NeoTypography.labelLarge,
-                    fontWeight = if (selectedKey == key) FontWeight.Black else FontWeight.Normal, color = NeoColors.OnSurface)
-                Box(Modifier.fillMaxWidth().height(if (selectedKey == key) 3.dp else 1.dp).background(NeoColors.Border))
+    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        options.forEachIndexed { index, (key, label) ->
+            val selected = selectedKey == key
+            val shape = RoundedCornerShape(4.dp)
+            val fill = listOf(NeoColors.Yellow, NeoColors.Habit, NeoColors.BubblegumPink)[index % 3]
+            Box(Modifier.weight(1f).fillMaxHeight().heightIn(min = 48.dp).selectable(selected, enabled = enabled, role = Role.Tab,
+                onClick = { focus.clearFocus(); keyboard?.hide(); onSelect(key) }).padding(top = 4.dp, bottom = 6.dp, end = 2.dp)) {
+                Box(Modifier.fillMaxSize()
+                    .neoHardShadow(shape, offsetX = if (selected) 2.dp else 0.dp, offsetY = if (selected) 2.dp else 0.dp)
+                    .background(if (selected) fill else NeoColors.Surface, shape)
+                    .border(if (selected) 2.dp else 1.dp, NeoColors.Ink, shape), contentAlignment = Alignment.Center) {
+                    Text(label, modifier = Modifier.padding(vertical = 7.dp, horizontal = 4.dp),
+                        textAlign = TextAlign.Center, style = NeoTypography.labelLarge,
+                        fontWeight = FontWeight.Bold, color = NeoColors.OnSurface)
+                }
             }
         }
     }
@@ -46,7 +54,7 @@ fun NeoInlineChoice(label: String, options: List<Pair<String, String>>, selected
     val keyboard = LocalSoftwareKeyboardController.current
     Box(modifier) {
         TextButton(onClick = { focus.clearFocus(); keyboard?.hide(); expanded = true },
-            enabled = enabled && options.isNotEmpty(), modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = 12.dp)) {
+            enabled = enabled && options.isNotEmpty(), modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = 6.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(label, style = NeoTypography.bodyMedium, color = NeoColors.OnSurface, modifier = Modifier.weight(1f))
                 Text((options.firstOrNull { it.first == selectedKey }?.second ?: stringResource(R.string.choice_placeholder_short)) + if (enabled) " ▾" else "",

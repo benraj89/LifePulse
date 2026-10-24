@@ -6,6 +6,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -26,6 +27,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.vibecheck.lifepulse.ui.util.rememberKeyboardDismisser
 
 /**
@@ -48,12 +51,13 @@ fun NeoTextField(
     backgroundColor: Color = NeoColors.Surface,
     borderColor: Color = NeoColors.Border,
     focusedShadowColor: Color = NeoColors.Accent,
-    shape: Shape = RoundedCornerShape(12.dp),
-    borderWidth: Dp = 3.dp,
-    focusedBorderWidth: Dp = 4.dp,
+    shape: Shape = RoundedCornerShape(4.dp),
+    borderWidth: Dp = 2.dp,
+    focusedBorderWidth: Dp = 3.dp,
     keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
     keyboardActions: KeyboardActions? = null,
-    textStyle: TextStyle = NeoTypography.bodyLarge
+    textStyle: TextStyle = NeoTypography.bodyLarge,
+    label: String = placeholder
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
@@ -68,11 +72,12 @@ fun NeoTextField(
 
     Box(
         modifier = modifier
+            .heightIn(min = 48.dp)
             .neoHardShadow(
                 shape = shape,
                 shadowColor = if (isFocused) focusedShadowColor else NeoColors.Shadow,
-                offsetX = if (isFocused) 6.dp else 4.dp,
-                offsetY = if (isFocused) 6.dp else 4.dp
+                offsetX = if (isFocused) 2.dp else 0.dp,
+                offsetY = if (isFocused) 2.dp else 0.dp
             )
             .background(color = backgroundColor, shape = shape)
             .border(
@@ -80,13 +85,13 @@ fun NeoTextField(
                 color = borderColor,
                 shape = shape
             )
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(horizontal = 12.dp, vertical = 11.dp)
     ) {
         if (value.isEmpty()) {
             Text(
                 text = placeholder,
                 style = textStyle,
-                color = NeoColors.Black.copy(alpha = 0.4f)
+                color = NeoColors.SecondaryText
             )
         }
         BasicTextField(
@@ -100,6 +105,7 @@ fun NeoTextField(
             cursorBrush = androidx.compose.ui.graphics.SolidColor(NeoColors.Black),
             modifier = Modifier
                 .fillMaxWidth()
+                .semantics { if (label.isNotBlank()) contentDescription = label }
                 .onFocusChanged { isFocused = it.isFocused }
         )
     }

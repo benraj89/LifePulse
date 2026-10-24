@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -54,16 +55,16 @@ fun NeoIconButton(
     borderColor: Color = NeoColors.Border,
     shadowColor: Color = NeoColors.Shadow,
     iconTint: Color = NeoColors.OnSurface,
-    shape: Shape = RoundedCornerShape(10.dp),
-    size: Dp = 40.dp,
+    shape: Shape = RoundedCornerShape(4.dp),
+    size: Dp = 48.dp,
     borderWidth: Dp = 2.dp,
-    shadowOffset: Dp = 4.dp
+    shadowOffset: Dp = 2.dp
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val pressOffset by animateDpAsState(
-        targetValue = if (isPressed && enabled) shadowOffset else 0.dp,
+        targetValue = if (isPressed && enabled) shadowOffset / 2 else 0.dp,
         animationSpec = tween(durationMillis = 90),
         label = "neoIconButtonPressOffset"
     )
@@ -71,7 +72,7 @@ fun NeoIconButton(
 
     Box(
         modifier = modifier
-            .size(size)
+            .size(size.coerceAtLeast(48.dp))
             .neoHardShadow(
                 shape = shape,
                 shadowColor = shadowColor,
@@ -88,6 +89,7 @@ fun NeoIconButton(
                 interactionSource = interactionSource,
                 indication = null,
                 enabled = enabled,
+                role = Role.Button,
                 onClick = onClick
             )
             .then(

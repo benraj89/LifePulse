@@ -46,7 +46,7 @@ fun NeoChoiceField(
 @Composable
 fun NeoConfirmDialog(title: String, message: String, confirmText: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
-        NeoStackedDialogCard(backLayerColor = NeoColors.Cyan, tapeText = stringResource(R.string.confirmation_tape)) {
+        NeoColumnCard(Modifier.fillMaxWidth(), contentPadding = 20.dp) {
             Text(title, style = NeoTypography.titleLarge, color = NeoColors.OnSurface)
             Text(message, style = NeoTypography.bodyMedium, color = NeoColors.OnSurface)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

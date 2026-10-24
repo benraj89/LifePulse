@@ -39,7 +39,7 @@ class ExpenseInsightsUiTest {
         compose.setContent { NeoBrutalismTheme { Box(Modifier.systemBarsPadding()) {
             ExpenseInsightsScreen(state, { state = state.copy(selectedMonth = it) }, {}, {})
         } } }
-        compose.waitUntil(5000) { compose.onAllNodesWithText("01 / THE BIG PICTURE").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5000) { compose.onAllNodesWithText("The big picture").fetchSemanticsNodes().isNotEmpty() }
         screenshot("insights-overview.png")
         compose.onNodeWithTag("insight_slice_category_1").performScrollTo().performClick().assertIsSelected()
         compose.onNodeWithTag("spending_insights").performScrollToIndex(2)

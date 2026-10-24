@@ -1,112 +1,71 @@
 package com.vibecheck.lifepulse.ui.habits
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.vibecheck.lifepulse.R
 import com.vibecheck.lifepulse.domain.model.Habit
 import com.vibecheck.lifepulse.domain.model.HabitFrequency
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoCard
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoColors
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoIconButton
-import com.vibecheck.lifepulse.ui.neobrutalism.NeoTypography
+import com.vibecheck.lifepulse.ui.neobrutalism.*
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Locale
 
 @Composable
-fun HabitRow(habit: Habit, accentColor: Color = NeoColors.Primary, onToggle: () -> Unit, onDelete: () -> Unit) {
-    NeoCard(
-        modifier = Modifier.fillMaxWidth(),
-        backgroundColor = NeoColors.Surface,
-        shape = RoundedCornerShape(12.dp),
-        borderWidth = 2.dp,
-        shadowOffsetX = 4.dp,
-        shadowOffsetY = 4.dp,
-        contentPadding = 0.dp
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Chunky color-coded accent stripe matching the section's frequency color.
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(8.dp)
-                    .background(accentColor)
-            )
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Checkbox(
-                    checked = habit.completedToday,
-                    onCheckedChange = { onToggle() },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = NeoColors.Primary,
-                        checkmarkColor = NeoColors.OnSurface,
-                        uncheckedColor = NeoColors.Border
-                    )
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(habit.title, style = NeoTypography.titleMedium, color = NeoColors.OnSurface)
-                    Text(
-                        text = reminderSummary(habit),
-                        style = NeoTypography.bodyMedium,
-                        color = NeoColors.OnSurface.copy(alpha = 0.7f)
-                    )
+fun HabitRow(habit: Habit, accentColor: Color = NeoColors.Habit, onToggle: () -> Unit, onDelete: () -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    val fill by animateColorAsState(if (habit.completedToday) NeoColors.Success else when (habit.frequency) {
+        HabitFrequency.DAILY -> NeoColors.Surface
+        HabitFrequency.WEEKLY -> NeoColors.Lavender
+        HabitFrequency.MONTHLY -> NeoColors.BlushPink
+    },
+        tween(120), label = "habitCompletion")
+    Surface(color = fill, shape = NeoTheme.shapes.medium, border = BorderStroke(2.dp, NeoColors.Ink),
+        modifier = Modifier.fillMaxWidth().testTag("habit_" + habit.id)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.weight(1f).toggleable(habit.completedToday, role = Role.Checkbox, onValueChange = { onToggle() })
+                .heightIn(min = 56.dp).padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NeoCheck(habit.completedToday)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(habit.title, style = NeoTypography.titleMedium)
+                    Text(reminderSummary(habit), style = NeoTypography.bodySmall, color = NeoColors.SecondaryText)
+                    if (habit.currentStreak > 0) Text(stringResource(when (habit.frequency) {
+                        HabitFrequency.DAILY -> R.string.habit_day_streak
+                        HabitFrequency.WEEKLY -> R.string.habit_week_streak
+                        HabitFrequency.MONTHLY -> R.string.habit_month_streak
+                    }, habit.currentStreak), style = NeoTypography.labelMedium, color = NeoColors.SecondaryText)
                 }
-                if (habit.currentStreak > 0) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .background(color = NeoColors.Accent, shape = RoundedCornerShape(50))
-                            .border(width = 2.dp, color = NeoColors.Border, shape = RoundedCornerShape(50))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.habit_streak_badge, habit.currentStreak),
-                            style = NeoTypography.labelLarge,
-                            color = NeoColors.OnSurface
-                        )
-                    }
+            }
+            Box(Modifier.padding(end = 4.dp)) {
+                IconButton(onClick = { menu = true }) {
+                    Icon(Icons.Default.MoreVert, stringResource(R.string.habit_actions, habit.title))
                 }
-                NeoIconButton(
-                    icon = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.habit_delete_content_description),
-                    onClick = onDelete,
-                    backgroundColor = NeoColors.Danger,
-                    iconTint = NeoColors.White,
-                    size = 30.dp,
-                    borderWidth = 1.5.dp,
-                    shadowOffset = 2.dp
-                )
+                DropdownMenu(menu, { menu = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.action_delete), color = NeoColors.Danger) },
+                        onClick = { menu = false; confirmDelete = true })
+                }
             }
         }
     }
+    if (confirmDelete) NeoConfirmDialog(stringResource(R.string.habit_delete_title),
+        stringResource(R.string.habit_delete_message, habit.title), stringResource(R.string.action_delete),
+        { confirmDelete = false }, { confirmDelete = false; onDelete() })
 }
-
 @Composable
 internal fun frequencyLabel(frequency: HabitFrequency): String = when (frequency) {
     HabitFrequency.DAILY -> stringResource(R.string.frequency_daily)

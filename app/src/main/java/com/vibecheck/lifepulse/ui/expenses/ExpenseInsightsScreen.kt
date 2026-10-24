@@ -43,7 +43,8 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private val chartColors = listOf(NeoColors.Yellow, NeoColors.Cyan, NeoColors.Coral, NeoColors.Lime, NeoColors.LightViolet, NeoColors.BubblegumPink)
+private val chartColors = listOf(NeoColors.Coral, NeoColors.SkyBlue, NeoColors.Yellow, NeoColors.LightViolet, NeoColors.BubblegumPink, NeoColors.Lime)
+private fun categoryColor(key: String) = chartColors[Math.floorMod(key.hashCode(), chartColors.size)]
 private fun YearMonth.label() = format(DateTimeFormatter.ofPattern("MMM yyyy"))
 
 @Composable
@@ -71,18 +72,19 @@ internal fun ExpenseInsightsScreen(state: ExpenseUiState, onMonth: (YearMonth) -
             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.insights_back), Modifier.size(20.dp)) } },
             windowInsets = WindowInsets(0), colors = TopAppBarDefaults.topAppBarColors(containerColor = NeoColors.Background))
     }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("spending_insights"),
-            contentPadding = PaddingValues(16.dp, 8.dp, 20.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+        LazyColumn(Modifier.widthIn(max = 840.dp).fillMaxSize().testTag("spending_insights"),
+            contentPadding = PaddingValues(12.dp, 6.dp, 12.dp, 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     MonthControl(stringResource(R.string.insights_month), state.selectedMonth, NeoColors.Yellow, Modifier.weight(1f)) { calendar = "month" }
-                    MonthControl(stringResource(R.string.insights_compare_with), comparedMonth, NeoColors.Cyan, Modifier.weight(1f)) { calendar = "compare" }
+                    MonthControl(stringResource(R.string.insights_compare_with), comparedMonth, NeoColors.LightViolet, Modifier.weight(1f)) { calendar = "compare" }
                 }
                 if (state.accounts.size > 1) NeoInlineChoice(stringResource(R.string.account_label),
                     listOf("all" to stringResource(R.string.finance_all_accounts)) + state.accounts.map { it.id.toString() to it.name },
                     state.selectedAccountId?.toString() ?: "all", { onAccount(it.toLongOrNull()) }, Modifier.testTag("insights_account"))
                 Row(Modifier.fillMaxWidth().clickable { matchDays = !matchDays }, verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(matchDays, { matchDays = it }, colors = CheckboxDefaults.colors(checkedColor = NeoColors.Ink, checkmarkColor = NeoColors.Lime))
+                    Checkbox(matchDays, { matchDays = it }, colors = CheckboxDefaults.colors(checkedColor = NeoColors.Ink, checkmarkColor = NeoColors.Surface))
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.insights_match_days), style = NeoTypography.labelSmall, fontWeight = FontWeight.Black)
                         Text(stringResource(R.string.insights_match_days_hint), style = NeoTypography.bodySmall)
@@ -98,6 +100,7 @@ internal fun ExpenseInsightsScreen(state: ExpenseUiState, onMonth: (YearMonth) -
                 item { Text(stringResource(R.string.insights_expenses_only), style = NeoTypography.bodySmall) }
             }
         }
+        }
     }
     calendar?.let { target ->
         NeoCalendarDialog(if (target == "month") state.selectedMonth else comparedMonth,
@@ -108,7 +111,7 @@ internal fun ExpenseInsightsScreen(state: ExpenseUiState, onMonth: (YearMonth) -
 @Composable
 private fun MonthControl(title: String, month: YearMonth, color: Color, modifier: Modifier, onClick: () -> Unit) {
     NeoCard(modifier.clickable(onClick = onClick), backgroundColor = color, shape = RoundedCornerShape(4.dp),
-        shadowOffsetX = 4.dp, shadowOffsetY = 4.dp, contentPadding = 10.dp) {
+        shadowOffsetX = 0.dp, shadowOffsetY = 0.dp, contentPadding = 12.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = NeoTypography.labelSmall, fontWeight = FontWeight.Black)
             Text("${month.label()} ▾", style = NeoTypography.labelLarge, fontWeight = FontWeight.Black)
@@ -118,21 +121,13 @@ private fun MonthControl(title: String, month: YearMonth, color: Color, modifier
 
 @Composable
 private fun InsightCard(title: String, color: Color = NeoColors.Surface, content: @Composable ColumnScope.() -> Unit) {
-    NeoCard(Modifier.fillMaxWidth().padding(bottom = 4.dp), backgroundColor = color, shape = RoundedCornerShape(4.dp), contentPadding = 3.dp) {
-        Column {
-            Row(Modifier.fillMaxWidth().background(NeoColors.Ink).padding(12.dp, 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(title, style = NeoTypography.labelLarge, color = NeoColors.White, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
-                Text("///", style = NeoTypography.titleMedium, color = NeoColors.Lime, fontWeight = FontWeight.Black)
-            }
-            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
-        }
-    }
+    NeoFeatureCard(title, color, content = content)
 }
 
 @Composable
 private fun ComparisonCard(data: SpendingInsights) {
-    InsightCard(stringResource(R.string.insights_big_picture), NeoColors.Yellow) {
-        Text(Money.format(data.spent), style = NeoTypography.headlineMedium, fontWeight = FontWeight.Black)
+    InsightCard(stringResource(R.string.insights_big_picture), NeoColors.Expense) {
+        Text(Money.format(data.spent), style = NeoTypography.headlineLarge, modifier = Modifier.fillMaxWidth())
         Text(if (data.days in 1 until data.month.lengthOfMonth()) stringResource(R.string.insights_spent_through_day, data.month.label(), data.days)
             else stringResource(R.string.insights_spent_month, data.month.label()), style = NeoTypography.bodySmall)
         val difference = data.comparisonSpent - data.previousSpent
@@ -145,11 +140,15 @@ private fun ComparisonCard(data: SpendingInsights) {
                 abs(data.changePercent!!), Money.format(abs(difference)))
         }
         Text(change, style = NeoTypography.labelLarge, fontWeight = FontWeight.Black,
-            modifier = Modifier.background(if (difference > 0) NeoColors.Coral else NeoColors.MintGreen)
-                .border(2.dp, NeoColors.Border).padding(8.dp))
+            modifier = Modifier.background(when {
+                data.month == data.comparedMonth || data.previousSpent == 0L || difference == 0L -> NeoColors.Concrete
+                difference > 0 -> NeoColors.Coral
+                else -> NeoColors.Success
+            }).padding(8.dp))
+        if (data.spent == 0L && data.previousSpent == 0L) return@InsightCard
         val maximum = maxOf(data.comparisonSpent, data.previousSpent, 1L)
         ComparisonBar(data.month, data.comparisonDays, data.comparisonSpent, maximum, NeoColors.Ink)
-        ComparisonBar(data.comparedMonth, data.comparedDays, data.previousSpent, maximum, NeoColors.Cyan)
+        ComparisonBar(data.comparedMonth, data.comparedDays, data.previousSpent, maximum, NeoColors.Concrete)
         HorizontalDivider(thickness = 2.dp, color = NeoColors.Border)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SmallStat(stringResource(R.string.insights_daily_average), Money.format(data.averagePerDay), Modifier.weight(1f))
@@ -196,7 +195,7 @@ internal fun CategoryChart(data: SpendingInsights) {
             Text(stringResource(R.string.insights_empty_month_hint), style = NeoTypography.bodySmall)
         } else {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(210.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(156.dp), contentAlignment = Alignment.Center) {
                     val chartDescription = stringResource(R.string.insights_category_chart_description)
                     Canvas(Modifier.fillMaxSize().semantics { contentDescription = chartDescription }) {
                         val diameter = size.minDimension - 12.dp.toPx()
@@ -205,7 +204,7 @@ internal fun CategoryChart(data: SpendingInsights) {
                         var start = -90f
                         slices.forEachIndexed { index, slice ->
                             val sweep = (slice.amount.toDouble() / data.spent * 360).toFloat()
-                            val color = chartColors[index % chartColors.size].let { if (active != null && active.key != slice.key) lerp(it, NeoColors.Surface, 0.7f) else it }
+                            val color = categoryColor(slice.key).let { if (active != null && active.key != slice.key) lerp(it, NeoColors.Surface, 0.7f) else it }
                             drawArc(color, start, sweep, true, origin, Size(diameter, diameter))
                             drawArc(NeoColors.Ink, start, sweep, true, origin, Size(diameter, diameter), style = Stroke(2.dp.toPx()))
                             start += sweep
@@ -229,7 +228,7 @@ internal fun CategoryChart(data: SpendingInsights) {
                     .background(if (selectedKey == slice.key) NeoColors.Concrete else NeoColors.Surface)
                     .clickable { selectedKey = if (selectedKey == slice.key) null else slice.key }.padding(4.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.size(14.dp).background(chartColors[index % chartColors.size]).border(2.dp, NeoColors.Border))
+                    Box(Modifier.size(14.dp).background(categoryColor(slice.key)).border(1.dp, NeoColors.Border))
                     Text(slice.displayName(), style = NeoTypography.bodySmall, modifier = Modifier.weight(1f))
                     Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(max = 160.dp)) {
                         Text(Money.format(slice.amount), style = NeoTypography.labelLarge, fontWeight = FontWeight.Black)
@@ -260,11 +259,10 @@ internal fun TrendChart(data: SpendingInsights, onMonth: (YearMonth) -> Unit) {
                 Column(Modifier.weight(1f).testTag("insight_month_${point.month}")
                     .semantics { contentDescription = monthDescription; selected = isSelected }
                     .clickable { onMonth(point.month) }, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.fillMaxWidth().height(135.dp), contentAlignment = Alignment.BottomCenter) {
+                    Box(Modifier.fillMaxWidth().height(if (data.trend.all { it.amount == 0L }) 24.dp else 135.dp), contentAlignment = Alignment.BottomCenter) {
                         if (point.amount > 0) Box(Modifier.fillMaxWidth().padding(horizontal = 3.dp)
                             .height((point.amount.toDouble() / maximum * 125).toFloat().dp.coerceAtLeast(3.dp))
-                            .neoHardShadow(shape = RoundedCornerShape(0.dp), offsetX = 3.dp, offsetY = 3.dp)
-                            .background(if (isSelected) NeoColors.Cyan else NeoColors.Yellow).border(2.dp, NeoColors.Border))
+                            .background(if (isSelected) NeoColors.Expense else NeoColors.Concrete).border(1.dp, NeoColors.Border))
                         else Box(Modifier.fillMaxWidth().height(2.dp).background(NeoColors.Border))
                     }
                     Text(point.month.format(DateTimeFormatter.ofPattern("MMM")), style = NeoTypography.labelSmall,
@@ -294,8 +292,8 @@ private fun CategoryChanges(data: SpendingInsights) {
                     category.previous == 0L -> stringResource(R.string.insights_new)
                     else -> (if (difference > 0) "+" else "−") + Money.format(abs(difference))
                 }, style = NeoTypography.labelSmall, fontWeight = FontWeight.Black,
-                    modifier = Modifier.widthIn(max = 140.dp).background(if (difference > 0) NeoColors.Coral else NeoColors.MintGreen)
-                        .border(2.dp, NeoColors.Border).padding(6.dp))
+                    modifier = Modifier.widthIn(max = 140.dp).background(if (difference == 0L || category.previous == 0L) NeoColors.Concrete else if (difference > 0) NeoColors.Coral else NeoColors.Success)
+                        .padding(6.dp))
             }
         }
         if (data.changes.size > 5) Text(stringResource(R.string.insights_biggest_changes), style = NeoTypography.bodySmall)

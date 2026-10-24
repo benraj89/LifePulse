@@ -1,6 +1,10 @@
 package com.vibecheck.lifepulse
 
 import android.content.Context
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.SavedStateHandle
 import com.vibecheck.lifepulse.data.backup.FinanceBackupRepository
@@ -49,9 +53,24 @@ class FinanceUiTest {
     }
     @After fun cleanup() { store.clear(); database.close() }
 
+    @Test fun compactSpendingKeepsSummaryAndFirstEntryVisible() {
+        compose.onNodeWithText("Monthly spending").assertIsDisplayed()
+        compose.onNodeWithText("Lunch").assertIsDisplayed()
+        screenshot("comic-spending.png")
+        compose.onNodeWithText("Accounts").performClick()
+        compose.onNodeWithText("Cash").assertIsDisplayed()
+        compose.onNodeWithText("Bank").assertIsDisplayed()
+        screenshot("comic-accounts.png")
+    }
+
+    private fun screenshot(name: String) {
+        val target = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, name)
+        target.outputStream().use { compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
     @Test fun spendingInsightsOpensAndReturnsToEntries() {
         compose.onNodeWithText("Spending insights").performClick()
-        compose.waitUntil(5000) { compose.onAllNodesWithText("01 / THE BIG PICTURE").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5000) { compose.onAllNodesWithText("The big picture").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("Back to spending").performClick()
         compose.onNodeWithText("Your entries").assertExists()
         compose.onNodeWithTag("transaction_$expenseId").assertExists()

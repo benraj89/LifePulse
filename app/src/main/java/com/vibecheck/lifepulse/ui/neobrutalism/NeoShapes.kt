@@ -8,8 +8,8 @@ import androidx.compose.ui.unit.dp
  * with a fully pill-shaped option for chips/tags.
  */
 data class NeoShapes(
-    val small: RoundedCornerShape = RoundedCornerShape(8.dp),
-    val medium: RoundedCornerShape = RoundedCornerShape(12.dp),
+    val small: RoundedCornerShape = RoundedCornerShape(4.dp),
+    val medium: RoundedCornerShape = RoundedCornerShape(8.dp),
     val large: RoundedCornerShape = RoundedCornerShape(16.dp),
     val pill: RoundedCornerShape = RoundedCornerShape(50)
 )

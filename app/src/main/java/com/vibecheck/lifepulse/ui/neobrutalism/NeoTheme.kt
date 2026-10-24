@@ -1,6 +1,9 @@
 package com.vibecheck.lifepulse.ui.neobrutalism
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -22,14 +25,35 @@ object NeoTheme {
 }
 
 private val NeoMaterialColorScheme = lightColorScheme(
-    primary = NeoColors.Primary,
-    onPrimary = NeoColors.OnPrimary,
+    // Material uses primary for text actions too; yellow is a surface accent, never text ink.
+    primary = NeoColors.Ink,
+    onPrimary = NeoColors.Surface,
     secondary = NeoColors.Secondary,
     onSecondary = NeoColors.OnPrimary,
     background = NeoColors.Background,
     onBackground = NeoColors.OnSurface,
     surface = NeoColors.Surface,
     onSurface = NeoColors.OnSurface,
+    primaryContainer = NeoColors.Yellow,
+    onPrimaryContainer = NeoColors.Ink,
+    secondaryContainer = NeoColors.Habit,
+    onSecondaryContainer = NeoColors.Ink,
+    tertiary = NeoColors.Expense,
+    onTertiary = NeoColors.Ink,
+    tertiaryContainer = NeoColors.Expense,
+    onTertiaryContainer = NeoColors.Ink,
+    surfaceVariant = NeoColors.Concrete,
+    onSurfaceVariant = NeoColors.SecondaryText,
+    surfaceContainer = NeoColors.Surface,
+    surfaceContainerLow = NeoColors.Surface,
+    surfaceContainerHigh = NeoColors.Surface,
+    surfaceContainerHighest = NeoColors.Concrete,
+    outline = NeoColors.Ink,
+    outlineVariant = NeoColors.Rule,
+    surfaceTint = NeoColors.Surface,
+    inverseSurface = NeoColors.Ink,
+    inverseOnSurface = NeoColors.Surface,
+    inversePrimary = NeoColors.Yellow,
     error = NeoColors.Danger,
     onError = NeoColors.White
 )
@@ -55,6 +79,10 @@ fun NeoBrutalismTheme(
         MaterialTheme(
             colorScheme = NeoMaterialColorScheme,
             typography = NeoTypography,
+            shapes = Shapes(
+                extraSmall = RoundedCornerShape(4.dp), small = RoundedCornerShape(4.dp),
+                medium = RoundedCornerShape(8.dp), large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(16.dp)
+            ),
             content = content
         )
     }
