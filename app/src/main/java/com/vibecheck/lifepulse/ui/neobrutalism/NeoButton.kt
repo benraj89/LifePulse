@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.TextStyle
 
 /**
  * A bold Neobrutalism button: solid fill, thick black border, and a hard offset shadow.
@@ -51,7 +52,8 @@ fun NeoButton(
     shadowOffset: Dp = 4.dp,
     horizontalPadding: Dp = 10.dp,
     verticalPadding: Dp = 8.dp,
-    leadingIcon: (@Composable () -> Unit)? = null
+    leadingIcon: (@Composable () -> Unit)? = null,
+    textStyle: TextStyle = NeoTypography.labelLarge
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -100,7 +102,7 @@ fun NeoButton(
             androidx.compose.material3.Text(
                 text = text,
                 color = if (enabled) contentColor else NeoColors.SecondaryText,
-                style = NeoTypography.labelLarge
+                style = textStyle
             )
         }
     }

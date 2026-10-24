@@ -5,6 +5,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -12,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.vibecheck.lifepulse.R
@@ -34,52 +37,53 @@ fun AddHabitDialog(onDismiss: () -> Unit,
     var weekDay by rememberSaveable { mutableStateOf(DayOfWeek.MONDAY.value) }
     var monthDay by rememberSaveable { mutableStateOf(1) }
     var showTime by remember { mutableStateOf(false) }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = NeoColors.Surface,
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = NeoColors.Background,
+        shape = NeoFormSheetShape,
+        dragHandle = { NeoSheetGrip() },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding()) {
             Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 NeoSheetHeader(stringResource(R.string.habit_dialog_title), onDismiss)
-                Text(stringResource(R.string.habit_title_label), style = NeoTypography.labelLarge)
-                NeoTextField(title, { title = it }, placeholder = stringResource(R.string.habit_dialog_field_title),
-                    label = stringResource(R.string.habit_title_label), modifier = Modifier.fillMaxWidth())
-                NeoSticker(stringResource(R.string.habit_dialog_frequency_label), color = NeoColors.Habit)
-                NeoTextTabs(HabitFrequency.entries.map { it.name to frequencyLabel(it) }, frequencyName, { frequencyName = it })
-                HorizontalDivider(color = NeoColors.Rule)
-                val reminderLabel = stringResource(R.string.habit_reminder_enable)
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(reminderLabel, style = NeoTypography.titleMedium, modifier = Modifier.weight(1f))
-                    NeoSwitch(reminder, { reminder = it }, Modifier.semantics { contentDescription = reminderLabel })
+                NeoFormTextField(title, { title = it }, label = stringResource(R.string.habit_title_label),
+                    placeholder = stringResource(R.string.habit_dialog_field_title), color = NeoColors.PaleCyan)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    NeoSticker(stringResource(R.string.habit_dialog_frequency_label), color = NeoColors.Habit)
+                    NeoFormTabs(HabitFrequency.entries.map { it.name to frequencyLabel(it) }, frequencyName, { frequencyName = it })
                 }
+                val reminderLabel = stringResource(R.string.habit_reminder_enable)
+                NeoReminderToggle(reminderLabel, reminder, { reminder = it })
                 if (reminder) {
                     if (frequency == HabitFrequency.WEEKLY) {
                         Text(stringResource(R.string.habit_reminder_day_of_week_label), style = NeoTypography.labelLarge)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(DayOfWeek.entries.size) { index ->
                                 val day = DayOfWeek.entries[index]
-                                FilterChip(selected = weekDay == day.value, onClick = { weekDay = day.value },
-                                    label = { Text(day.getDisplayName(TextStyle.SHORT, Locale.getDefault())) },
-                                    modifier = Modifier.heightIn(min = 48.dp).semantics {
+                                NeoButton(day.getDisplayName(TextStyle.SHORT, Locale.getDefault()), { weekDay = day.value },
+                                    modifier = Modifier.widthIn(min = 52.dp).semantics {
                                         contentDescription = day.getDisplayName(TextStyle.FULL, Locale.getDefault())
-                                    }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = NeoColors.Habit))
+                                        selected = weekDay == day.value
+                                    }, backgroundColor = if (weekDay == day.value) NeoColors.Yellow else NeoColors.LightViolet,
+                                    shadowOffset = if (weekDay == day.value) 3.dp else 0.dp)
                             }
                         }
                     }
-                    if (frequency == HabitFrequency.MONTHLY) NeoInlineChoice(
+                    if (frequency == HabitFrequency.MONTHLY) NeoFormChoice(
                         stringResource(R.string.habit_reminder_day_of_month_label),
                         (1..31).map { it.toString() to it.toString() }, monthDay.toString(), { monthDay = it.toInt() })
-                    Text(stringResource(R.string.habit_reminder_time_label), style = NeoTypography.labelLarge)
-                    NeoButton(stringResource(R.string.habit_reminder_time_format, formatTime12Hour(hour, minute)),
-                        { showTime = true }, Modifier.fillMaxWidth(), backgroundColor = NeoColors.Habit, shadowOffset = 0.dp)
+                    NeoFormActionRow(stringResource(R.string.habit_reminder_time_label), formatTime12Hour(hour, minute),
+                        { showTime = true }, color = NeoColors.BubblegumPink)
                 }
             }
-            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                 NeoButton(stringResource(R.string.habit_add_action), {
                     onConfirm(title.trim(), frequency, if (reminder) hour else null, if (reminder) minute else null,
                         if (reminder && frequency == HabitFrequency.WEEKLY) weekDay else null,
                         if (reminder && frequency == HabitFrequency.MONTHLY) monthDay else null)
-                }, Modifier.fillMaxWidth(), enabled = title.isNotBlank())
-                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.action_cancel)) }
+                }, Modifier.weight(1f), enabled = title.isNotBlank(), textStyle = NeoTypography.titleLarge,
+                    leadingIcon = { Icon(Icons.Default.Add, null, Modifier.size(18.dp)) })
             }
         }
     }
@@ -89,5 +93,6 @@ fun AddHabitDialog(onDismiss: () -> Unit,
 }
 
 @Preview(name = "Create habit", widthDp = 360, heightDp = 800)
+@Preview(name = "Create habit large text", widthDp = 320, heightDp = 900, fontScale = 1.5f)
 @Composable
 private fun AddHabitPreview() { NeoBrutalismTheme { AddHabitDialog({}) { _, _, _, _, _, _ -> } } }

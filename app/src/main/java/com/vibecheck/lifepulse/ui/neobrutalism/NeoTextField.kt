@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
@@ -57,7 +58,10 @@ fun NeoTextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
     keyboardActions: KeyboardActions? = null,
     textStyle: TextStyle = NeoTypography.bodyLarge,
-    label: String = placeholder
+    label: String = placeholder,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 11.dp),
+    restingShadow: Dp = 0.dp,
+    focusedShadow: Dp = 2.dp
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
@@ -76,8 +80,8 @@ fun NeoTextField(
             .neoHardShadow(
                 shape = shape,
                 shadowColor = if (isFocused) focusedShadowColor else NeoColors.Shadow,
-                offsetX = if (isFocused) 2.dp else 0.dp,
-                offsetY = if (isFocused) 2.dp else 0.dp
+                offsetX = if (isFocused) focusedShadow else restingShadow,
+                offsetY = if (isFocused) focusedShadow else restingShadow
             )
             .background(color = backgroundColor, shape = shape)
             .border(
@@ -85,7 +89,7 @@ fun NeoTextField(
                 color = borderColor,
                 shape = shape
             )
-            .padding(horizontal = 12.dp, vertical = 11.dp)
+            .padding(contentPadding)
     ) {
         if (value.isEmpty()) {
             Text(

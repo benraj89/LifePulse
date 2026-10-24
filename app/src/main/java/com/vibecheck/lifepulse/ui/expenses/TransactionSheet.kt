@@ -13,9 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.vibecheck.lifepulse.core.Money
 import com.vibecheck.lifepulse.domain.model.*
 import com.vibecheck.lifepulse.ui.components.CategoryDropdown
@@ -77,26 +79,22 @@ fun TransactionSheet(
         (type != TransactionType.TRANSFER || (destinationId != null && destinationId != accountId))
 
     ModalBottomSheet(
-        modifier = if (canChooseType || canChooseLoan) Modifier.fillMaxHeight(0.9f) else Modifier,
         onDismissRequest = { if (!state.saving) onDismiss() },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = NeoColors.Surface
+        containerColor = NeoColors.Background, shape = NeoFormSheetShape, dragHandle = { NeoSheetGrip() }
     ) {
         Column(Modifier.fillMaxWidth().testTag("transaction_editor").weight(1f, fill = false).verticalScroll(rememberScrollState())
             .navigationBarsPadding().imePadding().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth()) {
-                Text(if (initial != null) stringResource(R.string.transaction_edit_format, type.displayLabel().lowercase()) else if (repayLoan != null) stringResource(R.string.repayment_record) else if (canChooseType) stringResource(R.string.transaction_add) else when (type) {
+            NeoSheetHeader(if (initial != null) stringResource(R.string.transaction_edit_format, type.displayLabel().lowercase()) else if (repayLoan != null) stringResource(R.string.repayment_record) else if (canChooseType) stringResource(R.string.transaction_add) else when (type) {
                     TransactionType.TRANSFER -> stringResource(R.string.transaction_transfer_money)
                     TransactionType.LEND -> stringResource(R.string.transaction_lend_money)
                     TransactionType.BORROW -> stringResource(R.string.transaction_borrow_money)
                     else -> stringResource(R.string.transaction_add)
-                }, style = NeoTypography.headlineMedium, color = NeoColors.OnSurface, modifier = Modifier.weight(1f))
-                IconButton(onClick = onDismiss, enabled = !state.saving) { Icon(Icons.Default.Close, stringResource(R.string.transaction_close), modifier = Modifier.size(18.dp)) }
-            }
+                }, onDismiss, enabled = !state.saving, color = NeoColors.Expense)
             if (canChooseType || canChooseLoan) {
                 val choices = if (canChooseLoan) listOf(TransactionType.LEND to stringResource(R.string.loan_lent), TransactionType.BORROW to stringResource(R.string.loan_borrowed))
                     else entryTypes.map { it to it.displayLabel() }
-                NeoTextTabs(choices.map { it.first.name to it.second }, type.name, {
+                NeoFormTabs(choices.map { it.first.name to it.second }, type.name, {
                     typeName = it; localError = null; manageCategories = false
                 }, enabled = !state.saving)
             }
@@ -105,36 +103,30 @@ fun TransactionSheet(
                 if (repayLoan != null) Text(stringResource(R.string.repayment_outstanding_hint, Money.format(remainingMinor)),
                     color = NeoColors.OnSurface, style = NeoTypography.bodyMedium)
             }
-            Text(stringResource(R.string.transaction_amount_currency, entryCurrency), style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
-            NeoTextField(amountText, { if (!state.saving && Money.acceptsInput(it, code = entryCurrency)) amountText = it },
+            NeoFormTextField(amountText, { if (!state.saving && Money.acceptsInput(it, code = entryCurrency)) amountText = it },
                 placeholder = Money.input(0, entryCurrency), label = stringResource(R.string.transaction_amount_currency, entryCurrency), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
-                backgroundColor = NeoColors.PastelYellow, modifier = Modifier.fillMaxWidth(), textStyle = NeoTypography.headlineLarge)
+                color = NeoColors.Yellow, stickerColor = NeoColors.Expense, textStyle = NeoTypography.headlineLarge)
             if (type.isLoan) {
-                Text(if (type == TransactionType.LEND) stringResource(R.string.loan_lend_person) else stringResource(R.string.loan_borrow_person),
-                    style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
-                NeoTextField(person, { if (!state.saving) person = it }, placeholder = stringResource(R.string.loan_person_name),
-                    modifier = Modifier.fillMaxWidth(), backgroundColor = NeoColors.Primary)
+                NeoFormTextField(person, { if (!state.saving) person = it }, placeholder = stringResource(R.string.loan_person_name),
+                    label = stringResource(if (type == TransactionType.LEND) R.string.loan_lend_person else R.string.loan_borrow_person),
+                    color = NeoColors.PastelPink)
                 Text(stringResource(R.string.loan_tracking_hint),
                     style = NeoTypography.bodyMedium, color = NeoColors.OnSurface)
             }
-            NeoColumnCard(Modifier.fillMaxWidth(), backgroundColor = NeoColors.PaleCyan, contentPadding = 8.dp) {
-                if (type.needsCategory) NeoInlineChoice(stringResource(R.string.add_expense_category_label),
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (type.needsCategory) NeoFormChoice(stringResource(R.string.add_expense_category_label),
                     availableCategories.map { it.id.toString() to it.name } + ("manage" to stringResource(R.string.category_manage_action)),
                     categoryId?.toString(), { if (it == "manage") manageCategories = true else categoryId = it.toLong() },
-                    Modifier.testTag("category_choice"), enabled = !state.saving)
-                NeoInlineChoice(if (type == TransactionType.TRANSFER) stringResource(R.string.transaction_from_account) else if (type.moneyIn) stringResource(R.string.transaction_receive_into) else stringResource(R.string.transaction_paid_with),
+                    Modifier.testTag("category_choice"), color = NeoColors.LightViolet, enabled = !state.saving)
+                NeoFormChoice(if (type == TransactionType.TRANSFER) stringResource(R.string.transaction_from_account) else if (type.moneyIn) stringResource(R.string.transaction_receive_into) else stringResource(R.string.transaction_paid_with),
                     accounts.map { it.id.toString() to it.name }, accountId?.toString(), { accountId = it.toLong() },
                     Modifier.testTag("account_choice"), enabled = !state.saving && accounts.size > 1)
-                if (type == TransactionType.TRANSFER) NeoInlineChoice(stringResource(R.string.transaction_to_account),
+                if (type == TransactionType.TRANSFER) NeoFormChoice(stringResource(R.string.transaction_to_account),
                     accounts.filter { it.id != accountId }.map { it.id.toString() to it.name }, destinationId?.toString(),
-                    { destinationId = it.toLong() }, Modifier.testTag("destination_choice"), enabled = !state.saving)
-                TextButton(onClick = { showDate = true }, enabled = !state.saving, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(stringResource(R.string.add_expense_date_label), style = NeoTypography.bodyMedium, color = NeoColors.OnSurface)
-                        Text((if (dateText == LocalDate.now().toString()) stringResource(R.string.expense_today_label) else LocalDate.parse(dateText).format(DateTimeFormatter.ofPattern("dd MMM yyyy"))) + " ▾",
-                            style = NeoTypography.labelLarge, color = NeoColors.OnSurface)
-                    }
-                }
+                    { destinationId = it.toLong() }, Modifier.testTag("destination_choice"), color = NeoColors.Lime, enabled = !state.saving)
+                NeoFormActionRow(stringResource(R.string.add_expense_date_label),
+                    if (dateText == LocalDate.now().toString()) stringResource(R.string.expense_today_label) else LocalDate.parse(dateText).format(DateTimeFormatter.ofPattern("dd MMM yyyy")),
+                    { showDate = true }, color = NeoColors.BubblegumPink, enabled = !state.saving)
             }
             if (type.needsCategory && (manageCategories || availableCategories.isEmpty())) {
                 CategoryDropdown(availableCategories, availableCategories.firstOrNull { it.id == categoryId },
@@ -146,9 +138,8 @@ fun TransactionSheet(
                 Text(stringResource(R.string.transaction_transfer_hint), style = NeoTypography.bodySmall, color = NeoColors.OnSurface)
                 if (accounts.size < 2) Text(stringResource(R.string.transaction_second_account_hint), style = NeoTypography.bodyMedium, color = NeoColors.Danger)
             }
-            Text(stringResource(R.string.add_expense_note_label), style = NeoTypography.labelLarge)
-            NeoTextField(note, { if (!state.saving) note = it }, label = stringResource(R.string.add_expense_note_label), singleLine = false,
-                modifier = Modifier.fillMaxWidth(), backgroundColor = NeoColors.Surface)
+            NeoFormTextField(note, { if (!state.saving) note = it }, label = stringResource(R.string.add_expense_note_label), singleLine = false,
+                color = NeoColors.Surface, stickerColor = NeoColors.Lime)
             (localError?.let { stringResource(it) } ?: state.error)?.let { Text(it, color = NeoColors.Danger, style = NeoTypography.bodyMedium) }
             NeoButton(if (state.saving) stringResource(R.string.action_saving) else if (type.isRepayment) stringResource(R.string.repayment_save) else stringResource(R.string.transaction_save_format, type.displayLabel().lowercase()), {
                 val date = LocalDate.parse(dateText)
@@ -163,13 +154,24 @@ fun TransactionSheet(
                     note = note, person = person, loanId = initial?.loanId ?: repayLoan?.id, currencyCode = entryCurrency
                 ))
             }, Modifier.fillMaxWidth(), enabled = valid && !state.saving,
-                backgroundColor = NeoColors.Primary, contentColor = NeoColors.OnSurface)
+                backgroundColor = NeoColors.Primary, contentColor = NeoColors.OnSurface, textStyle = NeoTypography.titleLarge,
+                leadingIcon = { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) })
             if (onDelete != null) TextButton(onClick = onDelete, modifier = Modifier.fillMaxWidth(), enabled = !state.saving) {
                 Text(stringResource(R.string.transaction_delete_format, type.displayLabel().lowercase()), color = NeoColors.Danger)
             }
         }
     }
     if (showDate) NeoDatePickerDialog(LocalDate.parse(dateText), { dateText = it.toString(); localError = null }, { showDate = false })
+}
+
+@Preview(name = "Comic add entry", widthDp = 360, heightDp = 800)
+@Preview(name = "Comic add entry large text", widthDp = 320, heightDp = 900, fontScale = 1.5f)
+@Composable
+private fun AddEntryPreview() {
+    NeoBrutalismTheme {
+        TransactionSheet(listOf(Account(1, "Everyday account", 0)), listOf(Category(1, "Food & coffee", "#FF896A")),
+            SaveState(), onDismiss = {}, onSave = {}, onAddCategory = { _, _, _ -> }, onDeleteCategory = {})
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

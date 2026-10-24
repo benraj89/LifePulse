@@ -83,11 +83,15 @@ fun NeoValueRow(label: String, value: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun NeoSheetHeader(title: String, onClose: () -> Unit, enabled: Boolean = true) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        Text(title, style = NeoTypography.headlineSmall, modifier = Modifier.weight(1f).semantics { heading() })
-        IconButton(onClick = onClose, enabled = enabled) {
-            Icon(Icons.Default.Close, stringResource(R.string.transaction_close))
+fun NeoSheetHeader(title: String, onClose: () -> Unit, enabled: Boolean = true, color: Color = NeoColors.Habit) {
+    NeoCard(Modifier.fillMaxWidth().padding(end = 3.dp, bottom = 3.dp), backgroundColor = color,
+        shadowOffsetX = 3.dp, shadowOffsetY = 3.dp, contentPadding = 8.dp) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = NeoTypography.headlineSmall, color = NeoColors.Ink,
+                modifier = Modifier.weight(1f).semantics { heading() })
+            NeoBurst(color = NeoColors.Yellow)
+            NeoIconButton(Icons.Default.Close, stringResource(R.string.transaction_close), onClose,
+                enabled = enabled, backgroundColor = NeoColors.Surface, size = 40.dp)
         }
     }
 }

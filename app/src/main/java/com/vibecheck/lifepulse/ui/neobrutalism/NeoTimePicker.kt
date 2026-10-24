@@ -23,10 +23,20 @@ fun NeoTimePickerDialog(initialHour: Int, initialMinute: Int,
     val state = rememberTimePickerState(initialHour.coerceIn(0, 23), initialMinute.coerceIn(0, 59),
         is24Hour = DateFormat.is24HourFormat(LocalContext.current))
     Dialog(onDismissRequest = onDismiss) {
-        NeoColumnCard(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), contentPadding = 20.dp) {
-            Text(title, style = NeoTypography.headlineSmall)
-            TimeInput(state, modifier = Modifier.fillMaxWidth())
-            NeoButton(confirmText, { onConfirm(state.hour, state.minute) }, Modifier.fillMaxWidth())
+        NeoColumnCard(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            backgroundColor = NeoColors.LightViolet, contentPadding = 12.dp) {
+            NeoSticker(title)
+            TimeInput(state, modifier = Modifier.fillMaxWidth(), colors = TimePickerDefaults.colors(
+                timeSelectorSelectedContainerColor = NeoColors.Yellow,
+                timeSelectorUnselectedContainerColor = NeoColors.Surface,
+                timeSelectorSelectedContentColor = NeoColors.Ink,
+                timeSelectorUnselectedContentColor = NeoColors.Ink,
+                periodSelectorSelectedContainerColor = NeoColors.Habit,
+                periodSelectorUnselectedContainerColor = NeoColors.Surface,
+                periodSelectorSelectedContentColor = NeoColors.Ink,
+                periodSelectorUnselectedContentColor = NeoColors.Ink,
+                periodSelectorBorderColor = NeoColors.Ink))
+            NeoButton(confirmText, { onConfirm(state.hour, state.minute) }, Modifier.fillMaxWidth(), textStyle = NeoTypography.titleLarge)
             TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(cancelText) }
         }
     }
