@@ -51,6 +51,8 @@ class BackupDatabaseTest {
     @After fun cleanup() { source.close(); target.close() }
 
     private suspend fun backup(): String = ByteArrayOutputStream().also { exporter.writeBackup(it) }.toString("UTF-8")
+    private suspend fun legacyBackup(): String = rehash(backup().replace("\"version\":2", "\"version\":1")
+        .replace("\"currency\":{\"code\":\"USD\",\"fractionDigits\":2},", ""))
     private suspend fun transactions(db: LifePulseDatabase): List<ExpenseEntity> {
         val result = mutableListOf<ExpenseEntity>()
         db.backupDao().forEachTransactionPage { result.addAll(it) }
@@ -62,8 +64,8 @@ class BackupDatabaseTest {
         assertEquals("Walk", target.habitDao().getHabitById(1)?.title)
         assertEquals("EUR", target.financeSettingsDao().get()?.currencyCode)
     }
-    private suspend fun rejected(text: String) {
-        try { importer.restore(text.byteInputStream()); fail("Expected restore rejection") }
+    private suspend fun rejected(text: String, legacyCurrency: String? = null) {
+        try { importer.restore(text.byteInputStream(), legacyCurrency); fail("Expected restore rejection") }
         catch (_: InvalidBackupException) { }
         assertOriginal()
     }
@@ -100,15 +102,43 @@ class BackupDatabaseTest {
         assertTrue(csv.contains("\"EXPENSE\",\"1.234\",\"KWD\""))
     }
     @Test fun legacyBackupRequiresExplicitOriginalCurrencyBeforeReplacingAnything() = runBlocking {
-        val legacy = rehash(backup().replace("\"version\":2", "\"version\":1")
-            .replace("\"currency\":{\"code\":\"USD\",\"fractionDigits\":2},", ""))
+        val legacy = legacyBackup()
         rejected(legacy)
-        try { importer.restore(legacy.byteInputStream(), "JPY"); fail("Legacy amounts use hundredths") }
-        catch (_: InvalidBackupException) { }
-        assertOriginal()
+        rejected(legacy, "JPY") // Fractional yen cannot be restored without rounding.
         importer.restore(legacy.byteInputStream(), "USD")
         assertEquals("USD", target.financeSettingsDao().get()?.currencyCode)
         assertEquals(transactions(source), transactions(target))
+    }
+    @Test fun legacyBackupAcceptsCurrenciesOutsideTheOriginalSix() = runBlocking {
+        importer.restore(legacyBackup().byteInputStream(), "AED")
+        assertEquals("AED", target.financeSettingsDao().get()?.currencyCode)
+        assertEquals(source.backupDao().accounts(0, 500), target.backupDao().accounts(0, 500))
+        assertEquals(transactions(source), transactions(target))
+    }
+    @Test fun legacyBackupRescalesBalancesLoansAndRepaymentsWithoutChangingValue() = runBlocking {
+        importer.restore(legacyBackup().byteInputStream(), "KWD")
+        assertEquals("KWD", target.financeSettingsDao().get()?.currencyCode)
+        assertEquals(source.backupDao().accounts(0, 500).map { it.copy(openingMinor = it.openingMinor * 10) },
+            target.backupDao().accounts(0, 500))
+        assertEquals(transactions(source).map { it.copy(amountMinor = it.amountMinor * 10) }, transactions(target))
+        assertEquals("Walk", target.habitDao().getHabitById(1)?.title)
+    }
+    @Test fun legacyBackupSupportsWholeYenWithoutRounding() = runBlocking {
+        val legacy = rehash(legacyBackup().replace("\"openingMinor\":1234", "\"openingMinor\":1200")
+            .replace("\"openingMinor\":-123", "\"openingMinor\":-100")
+            .replace("\"amountMinor\":1234", "\"amountMinor\":1200"))
+        importer.restore(legacy.byteInputStream(), "JPY")
+        assertEquals("JPY", target.financeSettingsDao().get()?.currencyCode)
+        assertEquals(listOf(AccountEntity(1, "Cash", 12), AccountEntity(2, "Bank", -1)), target.backupDao().accounts(0, 500))
+        assertEquals(transactions(source).map { it.copy(amountMinor = if (it.id == 1L) 12 else it.amountMinor / 100) },
+            transactions(target))
+    }
+    @Test fun legacyCurrencyFailuresAndCorruptionCannotReplaceExistingData() = runBlocking {
+        val legacy = legacyBackup()
+        rejected(legacy, "XXX")
+        rejected(legacy.replace("\"openingMinor\":1234", "\"openingMinor\":1235"), "KWD")
+        rejected(rehash(legacy.replace("\"openingMinor\":1234", "\"openingMinor\":9223372036854775807")), "KWD")
+        rejected(rehash(legacy.replace("\"amountMinor\":1234", "\"amountMinor\":100000000000000")), "KWD")
     }
     @Test fun unsupportedVersionCannotReplaceData() = runBlocking { rejected(backup().replace("\"version\":2", "\"version\":999")) }
     @Test fun malformedTruncatedAndTrailingContentAreRejected() = runBlocking {
