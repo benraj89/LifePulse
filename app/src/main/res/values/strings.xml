@@ -473,10 +473,11 @@
     <string name="action_retry">Retry</string>
     <string name="backup_error_currency">The backup currency or decimal precision is invalid.</string>
     <string name="backup_error_legacy_currency">This older backup does not include its currency.</string>
+    <string name="backup_error_legacy_precision">Some backup amounts cannot be represented exactly in this currency or are too large. Check the original currency. No data was replaced.</string>
     <string name="currency_legacy_title">Original backup currency</string>
     <string name="currency_recover_title">Confirm your original currency</string>
     <string name="currency_recover_hint">Your existing records were saved without a recoverable currency setting. Choose their original currency to keep the amounts unchanged.</string>
-    <string name="currency_legacy_hint">This older backup did not save its currency. Choose the currency it used from the six supported by that version. Amounts will not be converted.</string>
+    <string name="currency_legacy_hint">This older backup did not save its currency. Search for and choose the currency it originally used. Amounts keep their original value; no exchange conversion or rounding is applied.</string>
     <!-- Home dashboard: scoped Neo-Brutalist redesign -->
     <string name="dashboard_today_label">Today</string>
     <string name="dashboard_money_heading">Your money · %1$s</string>

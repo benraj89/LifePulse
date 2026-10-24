@@ -81,8 +81,7 @@ fun BackupActions(snackbar: SnackbarHostState, onRestored: () -> Unit, viewModel
     if (pendingLegacyRestore != null) ModalBottomSheet(onDismissRequest = viewModel::clearLegacyRestore,
         containerColor = NeoColors.Surface, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         CurrencyPicker(null, viewModel::restoreLegacy, Modifier.fillMaxHeight(0.9f),
-            onDismiss = viewModel::clearLegacyRestore, allowedCodes = com.vibecheck.lifepulse.data.backup.BackupFormat.LEGACY_CURRENCIES,
-            legacyBackup = true)
+            onDismiss = viewModel::clearLegacyRestore, legacyBackup = true)
     }
 
     state.operation?.let { operation ->

@@ -53,6 +53,24 @@ class CurrencyUiTest {
         compose.onNodeWithText("Save currency").assertDoesNotExist()
     }
 
+    @Test fun legacyBackupPickerCanSearchAndSelectWorldwideCurrencies() {
+        var saved: String? = null
+        compose.setContent { NeoBrutalismTheme {
+            CurrencyPicker(null, { saved = it }, Modifier.fillMaxSize().systemBarsPadding(), legacyBackup = true)
+        } }
+        compose.onNodeWithText("Original backup currency").assertIsDisplayed()
+        listOf("AED", "JPY", "KWD", "CLF", "ZWG").forEach { code ->
+            compose.onNodeWithTag("currency_search").performTextReplacement(code)
+            compose.onNodeWithTag("currency_$code").performClick().assertIsSelected()
+            compose.onNodeWithText("Save currency").performSemanticsAction(SemanticsActions.OnClick) { it() }
+            compose.runOnIdle { assertEquals(code, saved) }
+        }
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        File(instrumentation.targetContext.getExternalFilesDir(null), "legacy-backup-currency-picker.png").outputStream().use {
+            instrumentation.uiAutomation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
+    }
+
     @Test fun threeDecimalTransactionSavesExactMinorUnitsAndCurrency() {
         Money.currencyCode = "KWD"
         var draft: TransactionDraft? = null

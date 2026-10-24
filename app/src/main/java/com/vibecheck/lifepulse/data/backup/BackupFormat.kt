@@ -56,7 +56,6 @@ object BackupChecksum {
 /** Fixed field order and compact UTF-8 JSON provide checksum canonicalization. V2 binds currency to amounts. */
 object BackupFormat {
     const val VERSION = 2
-    val LEGACY_CURRENCIES = CurrencyCatalog.LEGACY_CODES
     const val MAX_FILE_BYTES = 512L * 1024 * 1024
     private const val MAX_ROWS = 1_000_000
     private const val MAX_TEXT = 16_384
@@ -116,7 +115,10 @@ object BackupFormat {
         reader.field("version")
         val version = reader.integer()
         checkBackup(version == 1L || version == VERSION.toLong(), R.string.backup_error_version)
-        if (version == 1L) checkBackup(legacyCurrency in LEGACY_CURRENCIES, R.string.backup_error_legacy_currency)
+        if (version == 1L) {
+            checkBackup(legacyCurrency != null, R.string.backup_error_legacy_currency)
+            checkBackup(CurrencyCatalog.find(legacyCurrency!!) != null, R.string.backup_error_currency)
+        }
         reader.field("timestamp")
         val timestamp = reader.text()
         checkBackup(runCatching { Instant.parse(timestamp) }.isSuccess, R.string.backup_error_timestamp)
@@ -148,8 +150,10 @@ object BackupFormat {
         var accountCount = 0
         readArray(reader, { readAccount(reader) }) { rows ->
             accountCount += rows.size
-            stage.insertAccounts(rows)
             rows.forEach { writeAccount(canonical, it) }
+            stage.insertAccounts(if (version == 1L) rows.map {
+                it.copy(openingMinor = legacyMinorUnits(it.openingMinor, currencyCode))
+            } else rows)
         }
         checkBackup(accountCount > 0, R.string.backup_error_account_required)
         canonical.endArray().name("categories").beginArray()
@@ -161,8 +165,12 @@ object BackupFormat {
         canonical.endArray().name("transactions").beginArray()
         reader.field("transactions")
         readArray(reader, { readTransaction(reader) }) { rows ->
-            stage.insertTransactions(rows)
             rows.forEach { writeTransaction(canonical, it) }
+            stage.insertTransactions(if (version == 1L) rows.map {
+                val amount = legacyMinorUnits(it.amountMinor, currencyCode)
+                checkBackup(amount in 1..MAX_AMOUNT, R.string.backup_error_amount)
+                it.copy(amountMinor = amount)
+            } else rows)
         }
         canonical.endArray().name("contacts").beginArray()
         reader.field("contacts"); reader.beginArray()
@@ -188,6 +196,17 @@ object BackupFormat {
         checkBackup(stage.invalidRelations() == 0L && stage.overpaidLoans() == 0L, R.string.backup_error_relationships)
         stage.saveSettings(FinanceSettingsEntity(currencyCode = currencyCode, confirmed = true))
         return BackupMetadata(version.toInt(), timestamp, checksum)
+    }
+
+    /** V1 stored hundredths for every amount. Change integer scale, never denomination or value. */
+    internal fun legacyMinorUnits(amount: Long, currencyCode: String): Long {
+        val currency = CurrencyCatalog.find(currencyCode)
+            ?: throw InvalidBackupException(R.string.backup_error_currency)
+        return try {
+            java.math.BigDecimal.valueOf(amount, 2).movePointRight(currency.fractionDigits).longValueExact()
+        } catch (_: ArithmeticException) {
+            throw InvalidBackupException(R.string.backup_error_legacy_precision)
+        }
     }
 
     private suspend fun <T> readArray(reader: JsonReader, read: () -> T, insert: suspend (List<T>) -> Unit) {

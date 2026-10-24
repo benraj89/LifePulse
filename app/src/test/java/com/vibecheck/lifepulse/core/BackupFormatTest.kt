@@ -1,6 +1,8 @@
 package com.vibecheck.lifepulse.core
 
 import com.vibecheck.lifepulse.data.backup.BackupChecksum
+import com.vibecheck.lifepulse.data.backup.BackupFormat
+import com.vibecheck.lifepulse.data.backup.InvalidBackupException
 import com.vibecheck.lifepulse.data.backup.CsvFormat
 import org.junit.Assert.*
 import org.junit.Test
@@ -9,6 +11,29 @@ import java.util.Locale
 import java.util.TimeZone
 
 class BackupFormatTest {
+    @Test fun legacyAmountsPreserveTheirValueInEverySupportedCurrency() {
+        CurrencyCatalog.entries.forEach { currency ->
+            val minor = BackupFormat.legacyMinorUnits(12300, currency.code)
+            assertEquals(currency.code, 0, java.math.BigDecimal("123").compareTo(
+                java.math.BigDecimal.valueOf(minor, currency.fractionDigits)))
+            assertEquals(-minor, BackupFormat.legacyMinorUnits(-12300, currency.code))
+            assertEquals(0L, BackupFormat.legacyMinorUnits(0, currency.code))
+        }
+        assertEquals(1234L, BackupFormat.legacyMinorUnits(1234, "AED"))
+        assertEquals(12340L, BackupFormat.legacyMinorUnits(1234, "KWD"))
+        assertEquals(123400L, BackupFormat.legacyMinorUnits(1234, "CLF"))
+    }
+
+    @Test fun legacyAmountsRejectRoundingAndOverflowInsteadOfChangingValue() {
+        listOf(1234L to "JPY", -1234L to "JPY", Long.MAX_VALUE to "KWD",
+            Long.MIN_VALUE to "CLF", 100L to "XXX").forEach { (amount, code) ->
+            try {
+                BackupFormat.legacyMinorUnits(amount, code)
+                fail("Expected rejection for $amount $code")
+            } catch (_: InvalidBackupException) { }
+        }
+    }
+
     @Test fun checksumMatchesKnownSha256Vector() {
         val expected = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
         assertEquals(expected, BackupChecksum.sha256("abc".byteInputStream()))
