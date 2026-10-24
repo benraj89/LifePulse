@@ -35,13 +35,13 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.LifePulse"
+        android:theme="@style/Theme.Pockdo"
         tools:targetApi="31">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.LifePulse">
+            android:theme="@style/Theme.Pockdo">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -57,8 +57,8 @@
             android:enabled="true"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.vibecheck.lifepulse.action.HABIT_REMINDER" />
-                <data android:scheme="lifepulse" />
+                <action android:name="com.pockdo.daily.action.HABIT_REMINDER" />
+                <data android:scheme="pockdo" />
             </intent-filter>
         </receiver>
 

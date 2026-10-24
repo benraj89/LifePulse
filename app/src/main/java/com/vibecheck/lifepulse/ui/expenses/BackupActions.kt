@@ -54,7 +54,7 @@ fun BackupActions(snackbar: SnackbarHostState, onRestored: () -> Unit, viewModel
         try { action() } catch (_: ActivityNotFoundException) { viewModel.pickerFailed() }
         catch (_: SecurityException) { viewModel.pickerFailed() }
     }
-    fun filename(extension: String): String = "LifePulse-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))}.$extension"
+    fun filename(extension: String): String = "POCKDO-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))}.$extension"
 
     val backupLabel = stringResource(R.string.backup_menu_title)
     NeoIconButton(Icons.Default.FolderOpen, backupLabel, { showMenu = true },

@@ -105,7 +105,7 @@ class ReminderScheduler @Inject constructor(
             action = ReminderAlarmReceiver.ACTION_HABIT_REMINDER
             // The data URI makes each habit's PendingIntent unique: filterEquals() ignores extras,
             // so without it every habit would overwrite the previous habit's alarm.
-            data = android.net.Uri.parse("lifepulse://habit-reminder/$habitId")
+            data = android.net.Uri.parse("pockdo://habit-reminder/$habitId")
             putExtra(ReminderAlarmReceiver.EXTRA_HABIT_ID, habitId)
         }
         val flags = PendingIntent.FLAG_IMMUTABLE or

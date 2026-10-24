@@ -19,7 +19,7 @@ internal fun BroadcastReceiver.runReminderWork(
 ) {
     val pendingResult = goAsync()
     val wakeLock = context.getSystemService(PowerManager::class.java)
-        .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LifePulse:$tag")
+        .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "POCKDO:$tag")
     try {
         wakeLock.acquire(10_000L)
     } catch (e: Exception) {

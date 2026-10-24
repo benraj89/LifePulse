@@ -19,6 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "LifePulse"
+rootProject.name = "POCKDO"
 include(":app")
- 

@@ -74,7 +74,7 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        const val ACTION_HABIT_REMINDER = "com.vibecheck.lifepulse.action.HABIT_REMINDER"
+        const val ACTION_HABIT_REMINDER = "com.pockdo.daily.action.HABIT_REMINDER"
         const val EXTRA_HABIT_ID = "habit_id"
     }
 }

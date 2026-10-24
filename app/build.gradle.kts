@@ -13,7 +13,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.vibecheck.lifepulse"
+        applicationId = "com.pockdo.daily"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
