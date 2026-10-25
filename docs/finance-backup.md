@@ -21,6 +21,15 @@ hundredths of the configured currency; restoring does not convert currencies.
 
 ## Version 1 file contract
 
+Current version 2 backups include their currency and decimal precision and do
+not ask for a currency during restore. Older version 1 files omit that metadata:
+restore asks for the original currency using the full searchable currency list.
+Version 1 integers represent hundredths. Restore adjusts their integer scale
+exactly for the selected currency, including account opening balances and all
+transaction types, without exchange conversion. Fractional values unsupported
+by that currency, overflow, or transaction limits reject the restore without
+replacing existing data. Checksums still cover the original file amounts.
+
 `BackupWrapper`, `BackupMetadata`, `BackupPayload` and `BackupContact` in
 `data/backup/BackupFormat.kt` describe the JSON schema. Arrays are streamed in
 production; a whole `BackupPayload` object is never allocated.

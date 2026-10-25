@@ -18,8 +18,10 @@ hiltWork = "1.2.0"
 googleServices = "4.4.2"
 firebaseBom = "33.7.0"
 firebaseCrashlyticsPlugin = "3.0.2"
+playAppUpdate = "2.1.0"
 
 [libraries]
+play-app-update = { group = "com.google.android.play", name = "app-update", version.ref = "playAppUpdate" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }

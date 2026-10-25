@@ -57,6 +57,8 @@ ksp {
 
 dependencies {
 
+    implementation(libs.play.app.update)
+
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)

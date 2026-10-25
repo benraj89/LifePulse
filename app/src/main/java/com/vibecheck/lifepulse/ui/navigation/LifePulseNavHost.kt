@@ -70,7 +70,8 @@ private fun NavHostController.navigateToTab(route: String) {
 @Composable
 fun LifePulseNavHost(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    snackbarHost: @Composable () -> Unit = {}
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -78,6 +79,7 @@ fun LifePulseNavHost(
     Scaffold(
         modifier = modifier,
         containerColor = NeoColors.Background,
+        snackbarHost = snackbarHost,
         bottomBar = {
             NavigationBar(
                 containerColor = NeoColors.Surface,

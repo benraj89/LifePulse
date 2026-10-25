@@ -489,4 +489,7 @@
     <string name="habit_delete_title">Delete habit?</string>
     <string name="habit_delete_message">Delete “%1$s” and its completion history? This cannot be undone.</string>
     <string name="backup_short_label">Backup</string>
+    <string name="update_downloaded">A POCKDO update is ready. Restart when you\'re ready to install it.</string>
+    <string name="update_restart">Restart</string>
+    <string name="update_install_failed">Couldn\'t install the update. Tap Restart to try again.</string>
 </resources>
