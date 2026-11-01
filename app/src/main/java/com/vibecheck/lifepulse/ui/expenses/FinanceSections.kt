@@ -92,7 +92,7 @@ private fun SpendingSummary(state: ExpenseUiState, onCalendar: () -> Unit, onBre
         val amountWidth = measurer.measure(AnnotatedString(amount), NeoTypography.headlineLarge, softWrap = false).size.width
         val gap = with(LocalDensity.current) { 40.dp.roundToPx() }
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            if (amountWidth + actionWidth + gap <= constraints.maxWidth) {
+            if (amountWidth + actionWidth + gap <= this@BoxWithConstraints.constraints.maxWidth) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(amount, style = NeoTypography.headlineLarge, modifier = Modifier.weight(1f))
                     InsightAction(insightLabel, onBreakdown)

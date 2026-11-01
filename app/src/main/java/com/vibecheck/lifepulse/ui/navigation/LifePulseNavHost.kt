@@ -34,6 +34,7 @@ import com.vibecheck.lifepulse.R
 import com.vibecheck.lifepulse.ui.dashboard.DashboardScreen
 import com.vibecheck.lifepulse.ui.expenses.ExpenseScreen
 import com.vibecheck.lifepulse.ui.habits.HabitScreen
+import com.vibecheck.lifepulse.ui.privacy.PrivacyScreen
 import com.vibecheck.lifepulse.ui.neobrutalism.NeoColors
 import com.vibecheck.lifepulse.ui.neobrutalism.NeoTypography
 import com.vibecheck.lifepulse.ui.neobrutalism.neoHardShadow
@@ -81,7 +82,7 @@ fun LifePulseNavHost(
         containerColor = NeoColors.Background,
         snackbarHost = snackbarHost,
         bottomBar = {
-            NavigationBar(
+            if (currentRoute != "privacy") NavigationBar(
                 containerColor = NeoColors.Surface,
                 windowInsets = WindowInsets(0),
                 modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
@@ -135,11 +136,13 @@ fun LifePulseNavHost(
             composable(Destination.Dashboard.route) {
                 DashboardScreen(
                     onSeeAllHabits = { navController.navigateToTab(Destination.Habits.route) },
-                    onSeeAllExpenses = { navController.navigateToTab(Destination.Expenses.route) }
+                    onSeeAllExpenses = { navController.navigateToTab(Destination.Expenses.route) },
+                    onPrivacy = { navController.navigate("privacy") { launchSingleTop = true } }
                 )
             }
             composable(Destination.Habits.route) { HabitScreen() }
             composable(Destination.Expenses.route) { ExpenseScreen() }
+            composable("privacy") { PrivacyScreen(onBack = { navController.popBackStack() }) }
         }
     }
 }

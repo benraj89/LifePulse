@@ -25,7 +25,7 @@ import com.vibecheck.lifepulse.R
 @Composable
 fun NeoPageHeader(title: String, modifier: Modifier = Modifier, actions: @Composable RowScope.() -> Unit = {}) {
     BoxWithConstraints(modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-        if (maxWidth < 290.dp || LocalDensity.current.fontScale > 1.3f) {
+        if (this@BoxWithConstraints.maxWidth < 290.dp || LocalDensity.current.fontScale > 1.3f) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 ComicPageTitle(title)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
@@ -72,7 +72,7 @@ fun NeoValueRow(label: String, value: String, modifier: Modifier = Modifier) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val required = measurer.measure(AnnotatedString(label), NeoTypography.bodySmall, softWrap = false).size.width +
             measurer.measure(AnnotatedString(value), NeoTypography.titleMedium, softWrap = false).size.width + gap
-        if (required <= constraints.maxWidth) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (required <= this@BoxWithConstraints.constraints.maxWidth) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(label, style = NeoTypography.bodySmall, color = NeoColors.SecondaryText, modifier = Modifier.weight(1f))
             Text(value, style = NeoTypography.titleMedium, color = NeoColors.Ink)
         } else Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -23,7 +23,8 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
     onSeeAllHabits: () -> Unit = {},
-    onSeeAllExpenses: () -> Unit = {}
+    onSeeAllExpenses: () -> Unit = {},
+    onPrivacy: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val save by viewModel.expenseSave.collectAsStateWithLifecycle()
@@ -43,7 +44,8 @@ fun DashboardScreen(
         DashboardContent(
             state, Modifier.padding(padding), onSeeAllHabits, onSeeAllExpenses,
             onAddEntry = { viewModel.resetExpenseSave(); showEntry = true },
-            onToggleHabit = { viewModel.toggleHabit(it) }
+            onToggleHabit = { viewModel.toggleHabit(it) },
+            onPrivacy = onPrivacy
         )
     }
     if (showEntry) TransactionSheet(
@@ -61,19 +63,20 @@ internal fun DashboardContent(
     onHabits: () -> Unit,
     onMoney: () -> Unit,
     onAddEntry: () -> Unit,
-    onToggleHabit: (Long) -> Unit
+    onToggleHabit: (Long) -> Unit,
+    onPrivacy: () -> Unit = {}
 ) {
     val habits = remember(state.habits) { state.habits.sortedBy { it.completedToday }.take(4) }
     val entryEnabled = !state.isLoading && state.accounts.isNotEmpty()
     BoxWithConstraints(modifier.fillMaxSize().background(DashboardDesign.Canvas), contentAlignment = Alignment.TopCenter) {
         // Larger text returns to one column instead of squeezing two readable panes.
-        val twoColumns = maxWidth >= DashboardDesign.TwoColumnWidth && LocalDensity.current.fontScale < 1.5f
+        val twoColumns = this@BoxWithConstraints.maxWidth >= DashboardDesign.TwoColumnWidth && LocalDensity.current.fontScale < 1.5f
         LazyColumn(
             Modifier.widthIn(max = DashboardDesign.MaxContentWidth).fillMaxSize().testTag("dashboard"),
             contentPadding = PaddingValues(DashboardDesign.Gutter),
             verticalArrangement = Arrangement.spacedBy(DashboardDesign.Gap)
         ) {
-            item(key = "header") { DashboardHeader(state.date, entryEnabled, onAddEntry) }
+            item(key = "header") { DashboardHeader(state.date, entryEnabled, onAddEntry, onPrivacy) }
             if (state.isLoading) {
                 item(key = "loading") { DashboardLoading() }
             } else if (twoColumns) {

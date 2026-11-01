@@ -54,15 +54,17 @@ class DashboardUiTest {
         var moneyClicks = 0
         var habitClicks = 0
         var entryClicks = 0
+        var privacyClicks = 0
         val state = DashboardUiState(date = LocalDate.of(2026, 10, 3),
             accounts = listOf(Account(1, "Cash", 0)), owedToYou = 500, isLoading = false)
         compose.setContent {
             NeoBrutalismTheme {
                 DashboardContent(state, onHabits = { habitClicks++ }, onMoney = { moneyClicks++ },
-                    onAddEntry = { entryClicks++ }, onToggleHabit = {})
+                    onAddEntry = { entryClicks++ }, onToggleHabit = {}, onPrivacy = { privacyClicks++ })
             }
         }
         compose.onNodeWithText("Add entry").performClick()
+        compose.onNodeWithText("Privacy & support").performClick()
         compose.onNodeWithText("Your money · Oct").performScrollTo().performClick()
         compose.onNodeWithText("People owe you").assertExists()
         compose.onNodeWithText("Start a habit").performScrollTo().performClick()
@@ -70,6 +72,7 @@ class DashboardUiTest {
             assertEquals(1, entryClicks)
             assertEquals(1, moneyClicks)
             assertEquals(1, habitClicks)
+            assertEquals(1, privacyClicks)
         }
     }
 

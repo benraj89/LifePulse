@@ -495,4 +495,10 @@
     <string name="update_downloaded">A POCKDO update is ready. Restart when you\'re ready to install it.</string>
     <string name="update_restart">Restart</string>
     <string name="update_install_failed">Couldn\'t install the update. Tap Restart to try again.</string>
+    <string name="privacy_support">Privacy &amp; support</string>
+    <string name="privacy_back">Back</string>
+    <string name="privacy_crash_title">Share crash reports</string>
+    <string name="privacy_crash_description">Optional. Send saved and future crash diagnostics to Google Firebase to help fix problems: error details, app and device information, installation identifiers and app-quality session data. Habit and financial records are not intentionally attached to reports.</string>
+    <string name="privacy_crash_disable_hint">Turning this off takes full effect the next time the app starts. Pending reports are discarded on launches with sharing off. Reports already sent follow Firebase\'s retention policy.</string>
+    <string name="privacy_link_error">No app can open this link. Contact benraj8887@gmail.com for help.</string>
 </resources>

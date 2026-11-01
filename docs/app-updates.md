@@ -42,8 +42,8 @@ they later update past it; use critical priority deliberately.
 
 ### Verify delivery
 
-1. Configure proper release/upload signing and Play App Signing before release;
-   the current release Gradle configuration still uses debug signing.
+1. Configure the dedicated release upload key using `keystore.properties` (see
+   `release-signing.md`) and enable Play App Signing in Play Console.
 2. Upload a release using `com.pockdo.daily` with this feature enabled. Install
    it using Google Play's internal testing or internal app sharing workflow.
 3. Upload a second compatible build with a higher `versionCode`, using the same

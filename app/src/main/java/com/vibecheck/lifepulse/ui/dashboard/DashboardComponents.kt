@@ -49,19 +49,25 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-internal fun DashboardHeader(date: LocalDate, entryEnabled: Boolean, onAddEntry: () -> Unit) {
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(bottom = DashboardDesign.SmallGap)) {
-        val stackAction = maxWidth < 300.dp || LocalDensity.current.fontScale > 1.3f
-        if (stackAction) {
-            Column(verticalArrangement = Arrangement.spacedBy(DashboardDesign.Gap)) {
-                DashboardIdentity(date)
-                DashboardPrimaryAction(onAddEntry, entryEnabled, Modifier.fillMaxWidth())
+internal fun DashboardHeader(date: LocalDate, entryEnabled: Boolean, onAddEntry: () -> Unit, onPrivacy: () -> Unit = {}) {
+    Column(Modifier.fillMaxWidth().padding(bottom = DashboardDesign.SmallGap)) {
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val stackAction = this@BoxWithConstraints.maxWidth < 300.dp || LocalDensity.current.fontScale > 1.3f
+            if (stackAction) {
+                Column(verticalArrangement = Arrangement.spacedBy(DashboardDesign.Gap)) {
+                    DashboardIdentity(date)
+                    DashboardPrimaryAction(onAddEntry, entryEnabled, Modifier.fillMaxWidth())
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DashboardDesign.Gap)) {
+                    DashboardIdentity(date, Modifier.weight(1f))
+                    DashboardPrimaryAction(onAddEntry, entryEnabled)
+                }
             }
-        } else {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(DashboardDesign.Gap)) {
-                DashboardIdentity(date, Modifier.weight(1f))
-                DashboardPrimaryAction(onAddEntry, entryEnabled)
-            }
+        }
+        TextButton(onClick = onPrivacy, colors = ButtonDefaults.textButtonColors(contentColor = DashboardDesign.Ink),
+            contentPadding = PaddingValues(horizontal = 0.dp), modifier = Modifier.heightIn(min = 48.dp)) {
+            Text(stringResource(R.string.privacy_support), style = DashboardDesign.Label)
         }
     }
 }
@@ -236,7 +242,7 @@ internal fun DashboardValueRow(
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val labelWidth = measurer.measure(AnnotatedString(label), labelStyle, softWrap = false).size.width
         val valueWidth = measurer.measure(AnnotatedString(value), valueStyle, softWrap = false).size.width
-        if (labelWidth + valueWidth + gapPx <= constraints.maxWidth) {
+        if (labelWidth + valueWidth + gapPx <= this@BoxWithConstraints.constraints.maxWidth) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(label, style = labelStyle, color = DashboardDesign.SecondaryInk, modifier = Modifier.weight(1f))
                 Text(value, style = valueStyle, color = DashboardDesign.Ink)

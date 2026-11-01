@@ -3,6 +3,7 @@ package com.vibecheck.lifepulse
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.vibecheck.lifepulse.domain.repository.ExpenseRepository
 import com.vibecheck.lifepulse.notification.ReminderNotifier
 import com.vibecheck.lifepulse.worker.ReminderSyncWorker
@@ -31,6 +32,12 @@ class LifePulseApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Discard pending reports on launches where sharing is disabled. Disabling
+        // Crashlytics during a session takes full effect on the next app process.
+        FirebaseCrashlytics.getInstance().let { crashlytics ->
+            if (!crashlytics.isCrashlyticsCollectionEnabled) crashlytics.deleteUnsentReports()
+        }
 
         // The channel must exist before the very first notification is posted, and creating it
         // eagerly also makes the app's notification settings visible to the user right away.
