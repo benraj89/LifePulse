@@ -35,7 +35,9 @@ class CurrencyTest {
     @Test fun entryAcceptsLocalDecimalSeparatorsAndDigitsButRejectsGroupingAndAmbiguity() {
         assertEquals(12345L, Money.parse("123,45", "EUR", Locale.GERMANY))
         assertEquals(12345L, Money.parse("123.45", "EUR", Locale.GERMANY))
-        assertEquals(12345L, Money.parse("١٢٣٫٤٥", "AED", Locale.forLanguageTag("ar-AE")))
+        // UAE's default numbering system differs between JDK locale-data versions.
+        // Select Arabic numbering explicitly to test its digits and decimal separator.
+        assertEquals(12345L, Money.parse("١٢٣٫٤٥", "AED", Locale.forLanguageTag("ar-AE-u-nu-arab")))
         assertNull(Money.parse("1.234,56", "EUR", Locale.GERMANY))
         assertNull(Money.parse("1,234.56", "USD", Locale.US))
         assertEquals(-12345L, Money.parse("-12,345", "KWD", Locale.GERMANY, allowNegative = true))

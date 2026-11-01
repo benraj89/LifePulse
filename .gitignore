@@ -13,3 +13,15 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Local upload signing credentials and private keys. Commit only the example file.
+/keystore.properties
+/keystore.properties.*
+!/keystore.properties.example
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.key
+*.pem
+*.pk8
