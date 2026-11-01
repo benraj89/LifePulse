@@ -3,25 +3,23 @@
 Publisher: **Ben Raj**. Public support/privacy email: **benraj8887@gmail.com**.
 Applies to the first release of `com.pockdo.daily` with only Firebase Crashlytics.
 
-## Policy URL: required before submission
+## Published policy URL
 
-The complete policy is `app/src/main/assets/privacy-policy.html`. This is the
-single source used by the native Privacy & support screen. The same file is a
-standalone web page: upload it unchanged to a static HTTPS host, such as GitHub
-Pages, and put its actual public URL in Play Console's Privacy policy field.
-No domain purchase is needed. A local file path is not a public policy URL.
-See [GitHub's Pages setup instructions](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site).
+The owner published the policy on Google Sites:
+[POCKDO Privacy Policy](https://sites.google.com/view/pockdo-privacy-benra).
+Use this published URL in Play Console's Privacy policy field.
 
-For GitHub Pages, create a public repository for the policy, upload this file as
-`index.html` at its root, and configure Pages to deploy the root of that branch.
-Use the URL that GitHub actually provides. Open it while signed out, including on
-a phone, and confirm the whole policy loads without a login or regional restriction.
-Do not upload signing keys, keystore.properties, or the Android project just to
-host this page. If you change the policy, update this asset and the hosted copy
-together. Review the date and description against the app you actually submit.
+On 1 November 2026 an anonymous request returned HTTP 200 without a sign-in
+redirect. All 25 policy headings and paragraphs matched the app's policy asset.
+Check the published page on a phone as well before submitting the app.
 
-Nothing has been published by this change. No placeholder URL is shipped. The
-in-app policy works offline through Dashboard > Privacy & support.
+The complete policy source is `app/src/main/assets/privacy-policy.html`, used by
+the native Privacy & support screen. It remains in the Android repository and
+works offline. When the policy changes, update both this asset and the Google
+Sites text, then click Publish to make the website changes live. Keep the
+published site public and editing access restricted to its owner. Use the
+published URL rather than the Google Sites editor URL.
+[Google Sites publishing instructions](https://support.google.com/sites/answer/6372880?hl=en).
 
 Google requires a public, active, non-geofenced policy URL and a policy link or
 text in the app. It must identify the app/developer and describe data handling,
@@ -81,7 +79,7 @@ Sources:
 
 ## Remaining release checks
 
-1. Host the policy, verify the public URL, and enter it in Play Console.
+1. Enter the verified public policy URL above in Play Console and save it.
 2. Review Firebase project access/integrations; do not enable Analytics linking or
    other data exports without reassessing the policy and form.
 3. Submit accurate Data safety, target audience, ads and content-rating answers.
@@ -99,7 +97,8 @@ passed. Six Android 15 UI tests passed, including the dashboard privacy entry an
 the complete offline policy, report-choice interaction and Back action at 150%
 text size. Release dependencies and the merged release manifest have no Analytics,
 Messaging or advertising-ID permissions; the upload-signing certificate is unchanged.
-These checks do not submit a Data safety form or publish the policy.
+These build/UI checks do not submit a Data safety form; the public page was
+verified separately as recorded above.
 Manual checks on the Android 17 phone emulator also verified both enabled and
 disabled report-sharing choices after force-stop/relaunch, plus readable normal
 and 150% text layouts. Reporting was left off and the original text size restored.
