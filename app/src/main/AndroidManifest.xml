@@ -11,15 +11,9 @@
     <!-- Alarms are wiped by reboots and app updates: needed to re-arm every reminder. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- Exact wall-clock reminders.
-         SCHEDULE_EXACT_ALARM (API 31/32): granted by default, user-revocable in system settings.
-         USE_EXACT_ALARM (API 33+): auto-granted, non-revocable; allowed by Play policy because
-         reminders are the app's user-facing, user-scheduled core feature.
-         maxSdkVersion on SCHEDULE_EXACT_ALARM avoids requesting both on API 33+. -->
-    <uses-permission
-        android:name="android.permission.SCHEDULE_EXACT_ALARM"
-        android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- User-granted precise reminders on API 31+. Reminders use an inexact fallback
+         when this special access is unavailable. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- Lets the notification play sound/vibrate on devices where vibration is configured. -->
     <uses-permission android:name="android.permission.VIBRATE" />

@@ -1,11 +1,15 @@
 package com.vibecheck.lifepulse
 
+import android.app.AlarmManager
 import android.graphics.Bitmap
+import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -17,6 +21,8 @@ import com.vibecheck.lifepulse.ui.habits.*
 import com.vibecheck.lifepulse.ui.neobrutalism.*
 import org.junit.Assert.*
 import org.junit.Rule
+import org.junit.Assume.assumeFalse
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -84,6 +90,39 @@ class HabitsUiTest {
             assertEquals(9, captured?.reminderHour)
             assertEquals(0, captured?.reminderMinute)
             assertNull(captured?.reminderDayOfMonth)
+        }
+    }
+
+    @Test fun reminderCanBeSavedWithoutExactAlarmAccessAtLargeFontSize() {
+        assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        assumeFalse(context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms())
+        var captured: Habit? = null
+        compose.setContent {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 1.5f)) {
+                NeoBrutalismTheme {
+                    AddHabitDialog({}) { title, frequency, hour, minute, day, monthDay ->
+                        captured = Habit(1, title, frequency, 0, reminderHour = hour, reminderMinute = minute,
+                            reminderDayOfWeek = day, reminderDayOfMonth = monthDay)
+                    }
+                }
+            }
+        }
+        compose.onNode(hasSetTextAction()).performTextInput("Optional alarm access")
+        compose.onNode(hasSetTextAction()).performImeAction()
+        compose.onNodeWithContentDescription("Remind me").performScrollTo().performClick()
+        compose.onNodeWithText("Open alarm settings").performScrollTo().assertIsDisplayed()
+        val capture = File(context.cacheDir, "pockdo-exact-alarm-hint.png")
+        capture.outputStream().use {
+            InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+                .compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
+        compose.onNodeWithText("Add habit").performClick()
+        compose.runOnIdle {
+            assertEquals("Optional alarm access", captured?.title)
+            assertEquals(9, captured?.reminderHour)
+            assertEquals(0, captured?.reminderMinute)
         }
     }
 

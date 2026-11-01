@@ -87,6 +87,9 @@
     <string name="habit_reminder_day_of_month_label">Day of month</string>
     <string name="habit_reminder_set_time">Set time</string>
     <string name="habit_reminder_enable">Remind me</string>
+    <string name="habit_exact_alarm_explanation">For more precise reminder timing, allow Alarms &amp; reminders in Android Settings. Without access, reminders may arrive later. You can still save this habit.</string>
+    <string name="habit_exact_alarm_settings">Open alarm settings</string>
+    <string name="habit_exact_alarm_settings_unavailable">Alarm settings could not be opened. You can find Alarms &amp; reminders in your device settings.</string>
     <string name="habit_time_picker_title">Set reminder time</string>
     <string name="action_ok">OK</string>
     <string name="this_month">%1$s this month</string>

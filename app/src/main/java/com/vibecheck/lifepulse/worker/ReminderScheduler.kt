@@ -55,22 +55,10 @@ class ReminderScheduler @Inject constructor(
 
         try {
             if (canScheduleExactAlarms()) {
-                // setAlarmClock is the highest-priority alarm type: it is never deferred by Doze,
-                // App Standby buckets or battery saver, and it survives aggressive OEM policies
-                // better than setExactAndAllowWhileIdle.
-                val showIntent = PendingIntent.getActivity(
-                    context,
-                    SHOW_INTENT_REQUEST_BASE + (habitId % 1_000_000L).toInt(),
-                    Intent(context, com.vibecheck.lifepulse.MainActivity::class.java),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                am.setAlarmClock(
-                    AlarmManager.AlarmClockInfo(triggerAtMillis, showIntent),
-                    pendingIntent
-                )
+                // A habit reminder should not register as the device's next alarm clock.
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
             } else {
-                // API 31+ without SCHEDULE_EXACT_ALARM granted. This is the best we can legally do:
-                // it still fires in Doze, just within a maintenance window (usually minutes late).
+                // No special access is needed; Android may delay delivery to save battery.
                 am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
             }
         } catch (e: SecurityException) {
@@ -121,7 +109,6 @@ class ReminderScheduler @Inject constructor(
     companion object {
         private const val TAG = "ReminderScheduler"
         private const val REQUEST_CODE_BASE = 200_000
-        private const val SHOW_INTENT_REQUEST_BASE = 300_000
 
         fun requestCodeFor(habitId: Long): Int =
             REQUEST_CODE_BASE + (habitId % 1_000_000L).toInt()

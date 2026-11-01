@@ -73,6 +73,7 @@ fun AddHabitDialog(onDismiss: () -> Unit,
                         (1..31).map { it.toString() to it.toString() }, monthDay.toString(), { monthDay = it.toInt() })
                     NeoFormActionRow(stringResource(R.string.habit_reminder_time_label), formatTime12Hour(hour, minute),
                         { showTime = true }, color = NeoColors.BubblegumPink)
+                    ExactAlarmPermissionHint()
                 }
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),

@@ -17,8 +17,8 @@ import javax.inject.Inject
  *  - `MY_PACKAGE_REPLACED`: alarms are cleared when the app is updated.
  *  - `TIME_SET` / `TIMEZONE_CHANGED`: a stored RTC instant no longer maps to the user's chosen
  *    wall-clock time; recomputing keeps "21:00" meaning 21:00 in the new zone.
- *  - `SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` (API 31+): the user just granted/revoked the
- *    exact-alarm permission, so alarms must be re-armed with the right precision.
+ *  - `SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` (API 31+): access was granted. Revocation
+ *    stops the app and cancels exact alarms; foreground/periodic sync restores the fallback.
  *
  * Alarms are restored with bounded asynchronous database work; [ReminderSyncWorker] provides
  * catch-up and retries if the direct restoration fails.
