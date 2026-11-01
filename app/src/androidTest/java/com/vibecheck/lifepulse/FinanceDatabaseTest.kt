@@ -1,23 +1,24 @@
 package com.vibecheck.lifepulse
 
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.room.Room
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteOpenHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.vibecheck.lifepulse.core.Ledger
 import com.vibecheck.lifepulse.data.local.LifePulseDatabase
+import com.vibecheck.lifepulse.data.local.DefaultCategories
 import com.vibecheck.lifepulse.data.local.entity.AccountEntity
 import com.vibecheck.lifepulse.data.local.entity.CategoryEntity
+import com.vibecheck.lifepulse.data.local.entity.HabitEntity
 import com.vibecheck.lifepulse.data.repository.ExpenseRepositoryImpl
+import com.vibecheck.lifepulse.data.repository.FinanceCurrencyStore
 import com.vibecheck.lifepulse.di.DatabaseModule
 import com.vibecheck.lifepulse.domain.model.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import org.json.JSONObject
+import java.io.File
+import java.util.Locale
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
@@ -96,47 +97,43 @@ class FinanceDatabaseTest {
         rejected { repository.saveTransaction(TransactionDraft(type = TransactionType.INCOME, amountMinor = 100, accountId = 1, categoryId = expenseCategory)) }
     }
 
-    @Test fun legacyMigrationPreservesExpensesAndHabits() = runBlocking {
-        val name = "finance-migration-${System.nanoTime()}.db"
-        val schema = JSONObject(InstrumentationRegistry.getInstrumentation().context.assets.open("com.vibecheck.lifepulse.data.local.LifePulseDatabase/4.json")
-            .bufferedReader().use { it.readText() }).getJSONObject("database")
-        val helper = FrameworkSQLiteOpenHelperFactory().create(SupportSQLiteOpenHelper.Configuration.builder(context)
-            .name(name).callback(object : SupportSQLiteOpenHelper.Callback(4) {
-                override fun onCreate(db: SupportSQLiteDatabase) {
-                    val entities = schema.getJSONArray("entities")
-                    for (index in 0 until entities.length()) {
-                        val entity = entities.getJSONObject(index)
-                        val table = entity.getString("tableName")
-                        db.execSQL(entity.getString("createSql").replace("\${TABLE_NAME}", table))
-                        val indices = entity.getJSONArray("indices")
-                        for (i in 0 until indices.length()) db.execSQL(indices.getJSONObject(i).getString("createSql").replace("\${TABLE_NAME}", table))
-                    }
-                    val setup = schema.getJSONArray("setupQueries")
-                    for (i in 0 until setup.length()) db.execSQL(setup.getString(i))
-                }
-                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
-            }).build())
-        helper.writableDatabase.apply {
-            execSQL("INSERT INTO categories (id,name,colorHex,isDefault,isDeleted) VALUES (1,'Food','#FF7043',1,0)")
-            execSQL("INSERT INTO expenses (id,categoryId,amount,dateTimestamp,note) VALUES (7,1,12.345,1000,'Old lunch')")
-            execSQL("INSERT INTO habits (id,title,frequency,createdAt) VALUES (1,'Walk','DAILY',0)")
-            execSQL("INSERT INTO habit_logs (id,habitId,completedDate) VALUES (1,1,'2026-10-01')")
+    @Test fun firstReleaseSeedsDefaultsAndKeepsRecordsAfterReopening() = runBlocking {
+        val prefix = "release-baseline-${System.nanoTime()}"
+        val isolated = object : ContextWrapper(context) {
+            override fun getDatabasePath(name: String): File = context.getDatabasePath("$prefix-$name")
         }
-        helper.close()
-        val upgraded = Room.databaseBuilder(context, LifePulseDatabase::class.java, name)
-            .addMigrations(DatabaseModule.MIGRATION_4_5, DatabaseModule.MIGRATION_5_6).build()
+        val legacyFile = isolated.getDatabasePath("lifepulse.db")
+        legacyFile.parentFile!!.mkdirs()
+        legacyFile.writeText("Unreleased development data")
+        var fresh = DatabaseModule.provideDatabase(isolated)
         try {
-            val repo = ExpenseRepositoryImpl(upgraded.expenseDao(), upgraded.categoryDao(), upgraded.accountDao(), upgraded, context)
-            val record = repo.observeTransactions().first().single()
-            assertEquals(7L, record.id)
-            assertEquals(1235L, record.amountMinor)
-            assertEquals("Old lunch", record.note)
-            assertEquals("Food", record.categoryName)
-            assertEquals(TransactionType.EXPENSE, record.type)
-            assertEquals(1L, record.accountId)
-            assertEquals("Cash", repo.observeAccounts().first().single().name)
-            assertEquals("Walk", upgraded.habitDao().getHabitById(1)?.title)
-            assertEquals(listOf("2026-10-01"), upgraded.habitDao().getCompletionDates(1))
-        } finally { upgraded.close(); context.deleteDatabase(name) }
+            assertEquals(1, fresh.openHelper.writableDatabase.version)
+            assertEquals("Unreleased development data", legacyFile.readText())
+            assertTrue(fresh.habitDao().getAllHabitsOnce().isEmpty())
+            assertTrue(fresh.expenseDao().observeAllTransactions().first().isEmpty())
+            assertEquals(0L, fresh.accountDao().get(1)?.openingMinor)
+            val categories = fresh.categoryDao().observeCategories().first()
+            assertEquals(DefaultCategories.all(context).size, categories.size)
+            assertTrue(categories.all { it.isDefault && !it.isDeleted && it.kind == "EXPENSE" })
+            val currency = FinanceCurrencyStore(isolated, fresh, Locale.US)
+            assertFalse(currency.initialize().confirmed)
+            currency.select("USD")
+            val repo = ExpenseRepositoryImpl(fresh.expenseDao(), fresh.categoryDao(), fresh.accountDao(), fresh, isolated)
+            val transaction = repo.saveTransaction(TransactionDraft(amountMinor = 1234, accountId = 1,
+                categoryId = categories.first().id, note = "First release entry"))
+            val habit = fresh.habitDao().insertHabit(HabitEntity(title = "Walk", frequency = "DAILY"))
+            fresh.close()
+            fresh = DatabaseModule.provideDatabase(isolated)
+            assertEquals(1234L, fresh.expenseDao().get(transaction)?.amountMinor)
+            assertEquals("Walk", fresh.habitDao().getHabitById(habit)?.title)
+            assertEquals("USD", fresh.financeSettingsDao().get()?.currencyCode)
+            assertTrue(fresh.financeSettingsDao().get()!!.confirmed)
+            assertEquals(1, fresh.accountDao().observeAccounts().first().size)
+            assertEquals(categories.size, fresh.categoryDao().observeCategories().first().size)
+        } finally {
+            fresh.close()
+            context.deleteDatabase("$prefix-${LifePulseDatabase.NAME}")
+            context.deleteDatabase("$prefix-lifepulse.db")
+        }
     }
 }

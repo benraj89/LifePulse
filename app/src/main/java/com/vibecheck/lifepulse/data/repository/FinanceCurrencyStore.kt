@@ -9,18 +9,16 @@ import com.vibecheck.lifepulse.data.local.LifePulseDatabase
 import com.vibecheck.lifepulse.data.local.entity.FinanceSettingsEntity
 import java.util.Locale
 
-/** Currency lives with its amounts. Preferences are read only for migration. */
+/** Currency lives with its amounts in the release database. */
 class FinanceCurrencyStore(private val context: Context, private val database: LifePulseDatabase,
                            private val locale: Locale = Locale.getDefault()) {
     suspend fun initialize(): FinanceSettingsEntity = database.withTransaction {
         val dao = database.financeSettingsDao()
         dao.get() ?: run {
-            val legacy = context.getSharedPreferences("finance_settings", Context.MODE_PRIVATE).getString("currency", null)
-                ?.takeIf { it in CurrencyCatalog.LEGACY_CODES }
             val hasData = dao.hasFinancialData()
-            // Missing legacy preferences cannot reveal a historical denomination. Ask explicitly.
-            FinanceSettingsEntity(currencyCode = legacy ?: if (hasData) null else Money.suggestedCurrency(locale),
-                confirmed = legacy != null).also { dao.save(it) }
+            // Existing amounts without a setting require explicit recovery, never a region guess.
+            FinanceSettingsEntity(currencyCode = if (hasData) null else Money.suggestedCurrency(locale),
+                confirmed = false).also { dao.save(it) }
         }
     }.also { it.currencyCode?.let { code -> Money.currencyCode = code } }
 

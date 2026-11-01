@@ -21,7 +21,7 @@ import com.vibecheck.lifepulse.data.local.entity.HabitLogEntity
         ExpenseEntity::class,
         com.vibecheck.lifepulse.data.local.entity.FinanceSettingsEntity::class
     ],
-    version = 6,
+    version = 1,
     exportSchema = true
 )
 abstract class LifePulseDatabase : RoomDatabase() {
@@ -34,7 +34,8 @@ abstract class LifePulseDatabase : RoomDatabase() {
     abstract fun financeSettingsDao(): com.vibecheck.lifepulse.data.local.dao.FinanceSettingsDao
 
     companion object {
-        const val NAME = "lifepulse.db"
+        // First public-release baseline. Keep this name and migrate future schema changes.
+        const val NAME = "pockdo.db"
     }
 }
 

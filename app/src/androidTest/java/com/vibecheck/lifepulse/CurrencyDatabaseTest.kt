@@ -46,12 +46,14 @@ class CurrencyDatabaseTest {
         assertFalse(initial.confirmed)
     }
 
-    @Test fun legacyPreferenceMigratesOnceAndDatabaseWinsAfterward() = runBlocking {
+    @Test fun oldDevelopmentPreferenceDoesNotConfirmCurrencyInTheReleaseDatabase() = runBlocking {
         context.getSharedPreferences("finance_settings", Context.MODE_PRIVATE).edit().putString("currency", "GBP").commit()
         val store = FinanceCurrencyStore(context, database, Locale.JAPAN)
-        assertEquals("GBP", store.initialize().currencyCode)
+        assertEquals("JPY", store.initialize().currencyCode)
+        assertFalse(store.initialize().confirmed)
+        store.select("JPY")
         context.getSharedPreferences("finance_settings", Context.MODE_PRIVATE).edit().putString("currency", "INR").commit()
-        assertEquals("GBP", store.initialize().currencyCode)
+        assertEquals("JPY", store.initialize().currencyCode)
         assertTrue(database.financeSettingsDao().get()!!.confirmed)
     }
 

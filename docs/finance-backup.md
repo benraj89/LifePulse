@@ -15,9 +15,11 @@ IDs, dates, contact names and loan references.
 This database has no standalone contacts table: contacts are distinct nonempty
 `expenses.person` values. The backup explicitly lists these names and validates
 that they exactly match the restored transactions. It does not invent independent
-contact records. Habits, habit logs and the current currency preference are not
-part of a finance backup and are retained during restore. Amounts are integer
-hundredths of the configured currency; restoring does not convert currencies.
+contact records. Habits and habit logs are not part of a finance backup and are
+retained during restore. Current version 2 backups include the currency code and
+decimal precision; restore adopts that currency together with the records.
+Amounts use integer minor units for that currency. Restore does not perform
+exchange-rate conversion.
 
 ## Version 1 file contract
 
@@ -112,10 +114,10 @@ free private storage; storage failures leave live finance records intact.
 CSV is export-only and includes all transaction types and all dates/accounts,
 regardless of current screen filters. Columns are:
 
-`DateTime (UTC), Type, Amount, Category, Account, ToAccount, Contact, Note`
+`DateTime (UTC), Type, Amount, Currency, Category, Account, ToAccount, Contact, Note`
 
-Dates use `yyyy-MM-dd HH:mm:ss` in UTC with `Locale.ROOT`; money uses exact decimal
-hundredths with a period and no grouping. Names replace relational IDs. Files use
+Dates use `yyyy-MM-dd HH:mm:ss` in UTC with `Locale.ROOT`; money uses the selected
+currency's exact decimal precision with a period and no grouping. Names replace relational IDs. Files use
 UTF-8 with a BOM for Excel, CRLF record separators and quoted/escaped fields.
 Text starting with spreadsheet formula prefixes, including after whitespace,
 is prefixed with an apostrophe. This preserves it as text in spreadsheet imports.
