@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -86,7 +87,7 @@ fun LifePulseNavHost(
                 containerColor = NeoColors.Surface,
                 windowInsets = WindowInsets(0),
                 modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
-                    .height(if (LocalDensity.current.fontScale > 1.3f) 80.dp else 64.dp)
+                    .heightIn(min = if (LocalDensity.current.fontScale > 1.3f) 80.dp else 64.dp)
                     .border(BorderStroke(2.dp, NeoColors.Border))
             ) {
                 Destination.bottomBarItems.forEach { destination ->
@@ -113,7 +114,10 @@ fun LifePulseNavHost(
                             Text(
                                 text = label,
                                 style = NeoTypography.labelSmall,
-                                color = NeoColors.OnSurface
+                                color = NeoColors.OnSurface,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
                             )
                         },
                         colors = NavigationBarItemDefaults.colors(
